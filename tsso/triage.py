@@ -15,11 +15,13 @@ from dataclasses import dataclass, field
 from pathlib import Path
 import numpy as np
 
-from .geometry import disagreement_matrix, consensus_index, disputed_pair
+from .geometry import disagreement_matrix, consensus_index, disputed_pair, dmae
 from .sandbox import compile_check, run_check
 from .gate import load_check_sources
 
 STEREO_CHECKS = ('chirality', 'product_stereo')
+ENDPOINT_COPY_A = 0.02   # no real RDB7 TS (of 10,734) is closer than 0.039 A (D-MAE) to its reactant or product,
+                         # and no GoFlow guess closer than 0.059 A, so this never fires on the benchmark
 MIRROR = np.array([1.0, 1.0, -1.0])
 
 
@@ -41,10 +43,24 @@ def load_checks():
     return {n: compile_check(s) for n, s in load_check_sources().items()}
 
 
+def endpoint_check(rxn, xyz):
+    dists = [(dmae(xyz, ref), name) for ref, name in ((rxn.reactant_xyz, 'reactant'), (rxn.product_xyz, 'product'))
+             if np.isfinite(ref).all()]
+    if not dists:
+        return True, 'rule not applicable'
+    d, name = min(dists)
+    if d < ENDPOINT_COPY_A:
+        return False, (f'the guess is essentially the {name} (D-MAE {d:.3f} A); real transition states are never '
+                       f'closer than 0.04 A to it')
+    return True, f'{d:.2f} A (D-MAE) from the nearest of reactant and product'
+
+
 def triage(rxn, checks, amber_cutoff, rule_text=None):
     preds = rxn.preds
     K = len(preds)
     results = {k: {n: run_check(fn, rxn, preds[k]) for n, fn in checks.items()} for k in range(K)}
+    for k in range(K):     # a built-in sanity check: a copy of the reactant or product is not a transition state
+        results[k]['not_reactant_or_product'] = endpoint_check(rxn, preds[k])
     passing = np.array([all(ok is not False for ok, _ in results[k].values()) for k in range(K)])
     rejected = {k: [n for n, (ok, _) in results[k].items() if ok is False] for k in range(K) if not passing[k]}
     c = consensus_index(preds, allowed=passing)

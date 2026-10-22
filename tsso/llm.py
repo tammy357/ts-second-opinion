@@ -139,7 +139,10 @@ async def ask_text_async(prompt, key, fetch, model=None, system=SYSTEM, max_toke
     if not resp.ok:
         msg = (data.get('error') or {}).get('message', str(data)[:200])
         raise RuntimeError(f'the Anthropic API said: {msg}')
-    return ''.join(b.get('text', '') for b in data.get('content', [])), data.get('model', model or API_MODEL)
+    text = ''.join(b.get('text', '') for b in data.get('content', []))
+    if data.get('stop_reason') == 'max_tokens':
+        text += ' …(cut short)'
+    return text, data.get('model', model or API_MODEL)
 
 
 async def ask_async(prompt, key, fetch, model=None):

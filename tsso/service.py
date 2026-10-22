@@ -104,19 +104,28 @@ def _symbol(tok):
     return t
 
 
-def _parse_body(body):
+def _parse_body(body, expected=None):
     sym, xyz = [], []
     for ln in body:
         p = ln.split()
         if len(p) < 4:
             continue
-        sym.append(_symbol(p[0])); xyz.append([float(p[1]), float(p[2]), float(p[3])])
-    return sym, np.array(xyz, float)
+        try:
+            coords = [float(p[1]), float(p[2]), float(p[3])]
+        except ValueError:
+            raise ValueError(f'could not read coordinates in the line "{ln.strip()[:60]}"')
+        sym.append(_symbol(p[0])); xyz.append(coords)
+    xyz = np.array(xyz, float).reshape(-1, 3)
+    if not np.isfinite(xyz).all():
+        raise ValueError('coordinates must be finite numbers (found NaN or infinity)')
+    if expected is not None and len(sym) != expected:
+        raise ValueError(f'a frame says it has {expected} atoms but {len(sym)} coordinate lines follow')
+    return sym, xyz
 
 
 def read_xyz_frames(text):
     """Every frame of an xyz or multi-frame xyz text, as [(symbols, (N, 3) array in Angstrom)]."""
-    lines = text.strip().splitlines()
+    lines = text.replace('\ufeff', '').strip().splitlines()      # tolerate a byte-order mark (Windows editors)
     frames, i = [], 0
     while i < len(lines):
         if not lines[i].strip():
@@ -125,7 +134,7 @@ def read_xyz_frames(text):
             n = int(lines[i].split()[0])
         except ValueError:                      # a bare coordinate block without the count/comment header
             frames.append(_parse_body(lines[i:])); break
-        frames.append(_parse_body(lines[i + 2:i + 2 + n])); i += 2 + n
+        frames.append(_parse_body(lines[i + 2:i + 2 + n], expected=n)); i += 2 + n
     return frames
 
 
@@ -140,7 +149,7 @@ def _frames(x):
     if isinstance(x, np.ndarray):
         return [(None, a) for a in (x if x.ndim == 3 else x[None])]
     if isinstance(x, Path) or (isinstance(x, str) and '\n' not in x and x.strip().endswith('.xyz')):
-        return read_xyz_frames(Path(x).read_text())
+        return read_xyz_frames(Path(x).read_bytes().decode('utf-8-sig', errors='replace'))
     return read_xyz_frames(str(x))
 
 

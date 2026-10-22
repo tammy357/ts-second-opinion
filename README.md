@@ -157,7 +157,7 @@ TS guesses ──► run every accepted check ──► consensus among passing 
 
 ```bash
 pip install -e ".[dev]"
-python -m pytest -q tests                # 16 tests
+python -m pytest -q tests                # 20 tests
 python scripts/evaluate.py               # -> results/metrics.json
 python scripts/triage_all.py 0.2         # verdicts for all 1,194 reactions -> results/triage.csv
 python scripts/benchmark.py              # mirror blindness, handedness split, risk-coverage -> results/benchmark.json

@@ -190,9 +190,9 @@ def _(build_reaction, by_id, charge_and_multiplicity, check_btn, checks, example
         if not (smiles_in.value.strip() and reactant_in.value and product_in.value and guesses_in.value):
             _rxn, _err = None, 'Please add the SMILES, the reactant, the product and at least one TS guess.'
         else:
-            _rxn, _err = build_reaction(smiles_in.value.strip(), reactant_in.contents().decode(),
-                                        product_in.contents().decode(),
-                                        [f.contents.decode() for f in guesses_in.value], order_in.value)
+            _txt = lambda _b: _b.decode('utf-8-sig', errors='replace')      # any encoding, with or without a BOM
+            _rxn, _err = build_reaction(smiles_in.value.strip(), _txt(reactant_in.contents()), _txt(product_in.contents()),
+                                        [_txt(f.contents) for f in guesses_in.value], order_in.value)
         if _err is not None:
             import html as _html
             _msg = _html.escape(_err[0].upper() + _err[1:])
@@ -325,7 +325,7 @@ async def _(IN_BROWSER, api_key, ex, explain_btn, explanations, mo, rxn, t):
             try:
                 with mo.status.spinner(title='Asking Claude...'):
                     _text, _model = await ask_text_async(_prompt, api_key.value.strip(), _fetch_x,
-                                                         system='You are a careful computational chemist.', max_tokens=400)
+                                                         system='You are a careful computational chemist. Answer in under 90 words.', max_tokens=1500)
                 _out = mo.callout(mo.md(f"**Claude's explanation** ({_model}, from the facts above):\n\n{_text.strip()}"), kind='info')
             except Exception as _e:
                 import html as _hx
