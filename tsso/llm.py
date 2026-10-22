@@ -128,17 +128,24 @@ def request_headers(key):
             'anthropic-dangerous-direct-browser-access': 'true'}
 
 
-async def ask_async(prompt, key, fetch, model=None):
+async def ask_text_async(prompt, key, fetch, model=None, system=SYSTEM, max_tokens=2000):
     """Ask Claude over plain HTTPS with the caller's own API key (for the in-browser app, where fetch is
-    pyodide.http.pyfetch). Returns (code, backend_used, model_label)."""
+    pyodide.http.pyfetch). Returns (text, model_label)."""
     import json
-    resp = await fetch(API_URL, method='POST', headers=request_headers(key), body=json.dumps(request_body(prompt, model)))
+    body = request_body(prompt, model)
+    body['system'], body['max_tokens'] = system, max_tokens
+    resp = await fetch(API_URL, method='POST', headers=request_headers(key), body=json.dumps(body))
     data = json.loads(await resp.string())
     if not resp.ok:
         msg = (data.get('error') or {}).get('message', str(data)[:200])
         raise RuntimeError(f'the Anthropic API said: {msg}')
-    text = ''.join(b.get('text', '') for b in data.get('content', []))
-    return extract_code(text), 'api (browser)', data.get('model', model or API_MODEL)
+    return ''.join(b.get('text', '') for b in data.get('content', [])), data.get('model', model or API_MODEL)
+
+
+async def ask_async(prompt, key, fetch, model=None):
+    """Like ask(), over HTTPS with the caller's own key. Returns (code, backend_used, model_label)."""
+    text, label = await ask_text_async(prompt, key, fetch, model)
+    return extract_code(text), 'api (browser)', label
 
 
 def normalise(rule):

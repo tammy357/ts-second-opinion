@@ -296,26 +296,47 @@ def _(ORCA_TEMPLATE, charge, checks, dmae, ex, handedness_correct, mo, mult, rep
 
 
 @app.cell
-def _(mo, shutil):
-    explain_btn = mo.ui.run_button(label='Ask Claude to explain this verdict', disabled=shutil.which('claude') is None,
-                                   tooltip='Needs the Claude Code CLI on the machine running this app')
-    return (explain_btn,)
+def _(IN_BROWSER, mo, shutil):
+    api_key = mo.ui.text(kind='password', placeholder='sk-ant-...', label='Your Anthropic API key')
+    explain_btn = mo.ui.run_button(label='Ask Claude to explain this verdict',
+                                   disabled=not IN_BROWSER and shutil.which('claude') is None,
+                                   tooltip='Needs the Claude Code CLI, or (in the browser) your own Anthropic API key')
+    return api_key, explain_btn
 
 
 @app.cell
-def _(ex, explain_btn, explanations, mo, rxn, t):
+async def _(IN_BROWSER, api_key, ex, explain_btn, explanations, mo, rxn, t):
+    _key_note = mo.md("<span style='color:#55534e;font-size:12px'>Uses your own Anthropic API key (one short Claude call). "
+                      "It stays in this browser tab and is sent only to api.anthropic.com.</span>")
+    _prompt = ('You are helping a computational chemist decide whether to trust a machine-learned transition-state guess. '
+               'In 3 short sentences, plain English, no headings, explain the verdict and what to do next. Use only '
+               'these facts and do not suggest a repair they do not support.\n'
+               f'Reaction (atom-mapped SMILES): {rxn.smiles}\nVerdict: {t.verdict}\n' + '\n'.join(t.reasons))
     if ex and str(ex) in explanations:
         _out = mo.callout(mo.md("**Claude's explanation** (generated in advance with the Claude Code CLI, "
                                 "from the facts above):\n\n" + explanations[str(ex)]['explanation']), kind='info')
+    elif explain_btn.value and IN_BROWSER:
+        if not api_key.value.strip():
+            _out = mo.vstack([mo.hstack([api_key, explain_btn], justify='start'),
+                              mo.callout(mo.md('Paste your Anthropic API key first (console.anthropic.com → API keys).'), kind='warn')])
+        else:
+            from pyodide.http import pyfetch as _fetch_x
+            from tsso.llm import ask_text_async
+            try:
+                with mo.status.spinner(title='Asking Claude...'):
+                    _text, _model = await ask_text_async(_prompt, api_key.value.strip(), _fetch_x,
+                                                         system='You are a careful computational chemist.', max_tokens=400)
+                _out = mo.callout(mo.md(f"**Claude's explanation** ({_model}, from the facts above):\n\n{_text.strip()}"), kind='info')
+            except Exception as _e:
+                import html as _hx
+                _out = mo.callout(mo.Html(f'<b>Could not ask Claude.</b> {_hx.escape(str(_e))}'), kind='danger')
     elif explain_btn.value:
         import subprocess as _sp
-        _prompt = ('You are helping a computational chemist decide whether to trust a machine-learned transition-state guess. '
-                   'In 3 short sentences, plain English, no headings, explain the verdict and what to do next. Use only '
-                   'these facts and do not suggest a repair they do not support.\n'
-                   f'Reaction (atom-mapped SMILES): {rxn.smiles}\nVerdict: {t.verdict}\n' + '\n'.join(t.reasons))
         with mo.status.spinner(title='Asking Claude...'):
             _res = _sp.run(['claude', '-p'], input=_prompt, capture_output=True, text=True, timeout=180)
         _out = mo.callout(mo.md(_res.stdout.strip() or _res.stderr.strip()), kind='info')
+    elif IN_BROWSER:
+        _out = mo.vstack([mo.hstack([api_key, explain_btn], justify='start'), _key_note])
     else:
         _out = explain_btn
     _out
@@ -374,10 +395,9 @@ def _(authoring, mo, replay):
 
 
 @app.cell
-def _(IN_BROWSER, available_backends, mo):
+def _(IN_BROWSER, api_key, available_backends, mo):
     new_rule = mo.ui.text_area(placeholder='e.g. Hydrogens that move between atoms sit roughly between them at the transition state.',
                                label='Try your own rule', full_width=True)
-    api_key = mo.ui.text(kind='password', placeholder='sk-ant-...', label='Your Anthropic API key')
     write_btn = mo.ui.run_button(label='Write and test it with Claude')
     _b = available_backends()
     if IN_BROWSER:
@@ -391,7 +411,7 @@ def _(IN_BROWSER, available_backends, mo):
         _ui = mo.vstack([new_rule, mo.hstack([write_btn, mo.md(f"<span style='color:#55534e;font-size:12px'>{_note}</span>")],
                                              justify='start')])
     _ui
-    return api_key, new_rule, write_btn
+    return new_rule, write_btn
 
 
 @app.cell
@@ -409,12 +429,12 @@ async def _(IN_BROWSER, ROOT, api_key, mo, new_rule, write_btn):
     if IN_BROWSER:
         if not api_key.value.strip():
             _fail('Paste your Anthropic API key first (console.anthropic.com → API keys).')
-        from pyodide.http import pyfetch
+        from pyodide.http import pyfetch as _fetch_r
         from tsso.llm import ask_async
         _train = ROOT / 'data' / 'rdb7_train_reference.json.gz'
         if not _train.exists():
             with mo.status.spinner(title='Downloading the 9,540 reference transition states (6 MB, first time only)...'):
-                _r = await pyfetch('https://raw.githubusercontent.com/tammy357/ts-second-opinion/main/data/rdb7_train_reference.json.gz')
+                _r = await _fetch_r('https://raw.githubusercontent.com/tammy357/ts-second-opinion/main/data/rdb7_train_reference.json.gz')
                 if not _r.ok:
                     _fail('Could not download the reference transition states from GitHub.')
                 _train.parent.mkdir(parents=True, exist_ok=True)
@@ -423,7 +443,7 @@ async def _(IN_BROWSER, ROOT, api_key, mo, new_rule, write_btn):
         try:
             with mo.status.spinner(title='Claude is writing the check; testing it on 9,540 real transition states...') as _sp:
                 _out = await author_async(
-                    new_rule.value.strip(), lambda _p: ask_async(_p, _key, pyfetch), name=_name, save_dir=_save,
+                    new_rule.value.strip(), lambda _p: ask_async(_p, _key, _fetch_r), name=_name, save_dir=_save,
                     on_attempt=lambda _a: _sp.update(subtitle=f"Attempt {_a['attempt']}: accepts {100 * _a['pass_rate']:.1f}% "
                                                               f"of real TSs{'; kept' if _a['accepted'] else '; asking Claude to revise'}"))
         except Exception as _e:
