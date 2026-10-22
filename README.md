@@ -11,7 +11,7 @@ Works with any TS generator and any elements, from a web app, the command line, 
 
 > **Open Scientific Intelligence (OSI) Hackathon 2026** ·
 > **[Live app](https://tammy357.github.io/ts-second-opinion/app/)** (runs in your browser, nothing to install) ·
-> [Showcase page](https://tammy357.github.io/ts-second-opinion/) · Video (4 min): *link to be added*
+> [Showcase page](https://tammy357.github.io/ts-second-opinion/) · [Video (4 min)](https://youtu.be/zaH6y7H471k)
 
 ![a near-perfect TS guess with the wrong handedness](results/fig_hero_mirror.png)
 
