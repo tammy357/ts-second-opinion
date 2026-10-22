@@ -9,9 +9,9 @@
 **Check, repair and triage machine-learned transition-state (TS) guesses before you spend DFT.**
 Works with any TS generator and any elements, from a web app, the command line, Python, or an AI agent over MCP.
 
-> **Open Scientific Intelligence (OSI) Hackathon 2026** · Showcase page with the worked examples: open
-> [`docs/index.html`](docs/index.html) in a browser (no install)
-> · Video (4 min): *link to be added*
+> **Open Scientific Intelligence (OSI) Hackathon 2026** ·
+> **[Showcase page](https://tammy357.github.io/ts-second-opinion/)** with the worked examples (no install) ·
+> Video (4 min): *link to be added*
 
 ![a near-perfect TS guess with the wrong handedness](results/fig_hero_mirror.png)
 
