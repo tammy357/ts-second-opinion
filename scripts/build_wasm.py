@@ -15,7 +15,8 @@ EXAMPLES = (3509, 5877, 1292, 2577, 1093)
 FILES = (['results/' + f for f in ('metrics.json', 'triage_summary.json', 'certify.json', 'explanations.json',
                                    'leaderboard.json', 'authoring_log.jsonl', 'authoring_log_run1.jsonl',
                                    'fig_final_answer.png', 'fig_certify.png', 'fig_risk_coverage.png')]
-         + ['examples/rdb7_3509/' + f for f in ('reaction.smi', 'reactant.xyz', 'product.xyz', 'guesses.xyz')])
+         + ['examples/rdb7_3509/' + f for f in ('reaction.smi', 'reactant.xyz', 'product.xyz', 'guesses.xyz')]
+         + ['examples/evaluate/' + f for f in ('predictions.xyz', 'references.xyz', 'reactions.smi')])
 
 
 def bundle():

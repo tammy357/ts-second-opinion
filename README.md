@@ -105,7 +105,7 @@ multi-frame `.xyz`). Several guesses (models, seeds or samples) add the model-di
 atom-map number by default; add `--order smiles` if your files follow the SMILES order. Add `--write-xyz best.xyz
 --orca best.inp` for the recommended geometry and an ORCA OptTS + Freq input. See `examples/` for ready-made files.
 
-To score a generator's test-set predictions with and without handedness:
+To score a generator's test-set predictions with and without handedness (also in the live app, under the leaderboard):
 
 ```bash
 tsso evaluate predictions.xyz references.xyz reactions.smi      # multi-frame xyz, one frame per reaction

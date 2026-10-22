@@ -528,6 +528,71 @@ def _(ROOT, json, mo):
 
 @app.cell
 def _(ROOT, mo):
+    pred_in = mo.ui.file(filetypes=['.xyz'], label='Predictions .xyz')
+    refs_in = mo.ui.file(filetypes=['.xyz'], label='Reference TSs .xyz')
+    rxns_in = mo.ui.file(filetypes=['.smi', '.txt'], label='Reaction SMILES (.smi)')
+    eval_order = mo.ui.dropdown({'by atom-map number': 'map', 'in the order of the SMILES': 'smiles'},
+                                value='by atom-map number', label='Atoms in my files are listed')
+    eval_btn = mo.ui.run_button(label='Score my model', kind='success')
+    eval_demo = mo.ui.run_button(label='Try it: 200 GoFlow predictions')
+    _d = ROOT / 'examples' / 'evaluate'
+    _files = mo.hstack([mo.download(data=(_d / f).read_bytes(), filename=f, label=f)
+                        for f in ('predictions.xyz', 'references.xyz', 'reactions.smi')], justify='start')
+    mo.vstack([
+        mo.md('### Score your own TS model'),
+        mo.md('Upload your test-set predictions and the reference TSs as multi-frame `.xyz` files (one frame per '
+              'reaction, same order) plus one atom-mapped reaction SMILES per line. You get the usual success rate '
+              'and the stereo-aware one, ready to report. Nothing leaves your computer.'),
+        mo.hstack([pred_in, refs_in, rxns_in], justify='start'), eval_order, mo.hstack([eval_btn, eval_demo], justify='start'),
+        mo.accordion({'The example files': _files})])
+    return eval_btn, eval_demo, eval_order, pred_in, refs_in, rxns_in
+
+
+@app.cell
+def _(ROOT, eval_btn, eval_demo, eval_order, mo, pred_in, refs_in, rxns_in):
+    import html as _he
+    from tsso.service import evaluate_files as _evaluate_files
+    _txt = lambda _b: _b.decode('utf-8-sig', errors='replace')
+    if eval_demo.value:
+        _d = ROOT / 'examples' / 'evaluate'
+        _p, _r, _s, _o, _who = ((_d / 'predictions.xyz').read_text(), (_d / 'references.xyz').read_text(),
+                                (_d / 'reactions.smi').read_text(), 'map', 'GoFlow, model 1 (first 200 RDB7 test reactions)')
+    elif eval_btn.value:
+        if not (pred_in.value and refs_in.value and rxns_in.value):
+            mo.stop(True, mo.callout(mo.md('Please add all three files.'), kind='warn'))
+        _p, _r, _s, _o, _who = (_txt(pred_in.contents()), _txt(refs_in.contents()), _txt(rxns_in.contents()),
+                                eval_order.value, 'Your model')
+    else:
+        mo.stop(True)
+    _smiles = [_ln.split()[0] for _ln in _s.splitlines() if _ln.strip()]
+    try:
+        _res = _evaluate_files(_p, _r, _smiles, _o)
+    except ValueError as _e:
+        _res = {'error': str(_e)}
+    if 'error' in _res:
+        mo.stop(True, mo.callout(mo.Html(f'<b>Could not score these files.</b> {_he.escape(_res["error"])}'), kind='danger'))
+    _pc = lambda _v: f'{100 * _v:.1f}%'
+    _tile = lambda _v, _l: (f"<div style='flex:1;min-width:190px;padding:12px 14px;border:1px solid #e3e2de;border-radius:12px;"
+                            f"background:#fff'><div style='font-size:26px;font-weight:750'>{_v}</div>"
+                            f"<div style='color:#55534e;font-size:13px;margin-top:4px'>{_l}</div></div>")
+    _row = (f"| {_who} | {_res['n']} | {_pc(_res['success_dmae_only'])} | {_pc(_res['handedness_correct'])} | "
+            f"{_pc(_res['success_dmae_and_handedness'])} |")
+    mo.vstack([
+        mo.Html("<div style='display:flex;gap:12px;flex-wrap:wrap'>"
+                + _tile(_pc(_res['success_dmae_only']), f"success by the usual score (D-MAE ≤ {_res['threshold_A']} Å), {_res['n']} reactions")
+                + _tile(_pc(_res['success_dmae_and_handedness']), 'success that is also correctly handed')
+                + _tile(_pc(_res['wrong_handed_counted_as_success']), 'wrong-handed guesses the usual score counts as a success')
+                + "</div>"),
+        mo.md(f"Mean D-MAE {_res['mean_dmae_A']:.3f} Å · mean RMSD with the mirror allowed {_res['mean_rmsd_mirror_allowed_A']:.3f} Å "
+              f"(what `ignore_chirality=True` reports) · without it {_res['mean_rmsd_A']:.3f} Å."),
+        mo.accordion({'A leaderboard row to paste into a paper or a pull request': mo.md(
+            '```markdown\n| Method | Reactions | Success (D-MAE ≤ 0.2 Å) | Correct handedness | Success with correct handedness |\n'
+            '| --- | --- | --- | --- | --- |\n' + _row + '\n```')})])
+    return
+
+
+@app.cell
+def _(ROOT, mo):
     mo.vstack([
         mo.md('## 5 · Results'),
         mo.hstack([mo.image((ROOT / 'results' / 'fig_final_answer.png').read_bytes(), width=470),
