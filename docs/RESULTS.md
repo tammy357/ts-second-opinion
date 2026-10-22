@@ -1,6 +1,8 @@
 # Detailed results
 
-Everything behind the numbers in the [README](../README.md). All results are retrospective: GoFlow's released predictions for the 1,194 RDB7 test reactions, with rules gated only on the 9,540 training reactions. Every number is reproduced by the scripts listed in the README.
+Everything behind the numbers in the [README](../README.md). The main results are retrospective: GoFlow's released predictions for the 1,194 RDB7 test reactions, with rules gated only on the 9,540 training reactions. New GFN2-xTB transition-state optimisations (106 reactions) test the two central claims prospectively; see [New calculations](#new-calculations-optimising-the-guesses-with-gfn2-xtb). Every number is reproduced by the scripts listed in the README.
+
+**Contents:** [Results on RDB7](#results-on-rdb7) · [New xTB calculations](#new-calculations-optimising-the-guesses-with-gfn2-xtb) · [Is it only GoFlow?](#is-it-only-goflow) · [Closest prior work](#closest-prior-work-found-with-valency-mcp-bond) · [Partial flips](#can-partial-flips-be-repaired) · [Data audit](#data-audit-where-rdb7s-smiles-and-geometries-disagree) · [Leaderboard](#full-stereo-aware-leaderboard) · [Limitations](#limitations-in-detail)
 
 ## Results on RDB7
 
@@ -324,7 +326,7 @@ but has no check on ML guesses beforehand and no stereo check, could call these 
 
 ## Limitations in detail
 
-- **Retrospective.** No new DFT was run. "Right" means close to RDB7's reference TS geometry, not that a
+- **Retrospective, apart from new GFN2-xTB optimisations.** No new DFT was run. "Right" means close to RDB7's reference TS geometry, not that a
   TS optimisation from the guess converges. The statements above about what DFT would do with a mirror-image guess follow
   from symmetry (an achiral Hamiltonian gives mirror images identical energies), not from new calculations.
 - **Whether a handedness error counts as wrong depends on what you need.** For a barrier height alone, a whole mirror image

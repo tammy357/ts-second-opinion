@@ -9,9 +9,26 @@
 **Check, repair and triage machine-learned transition-state (TS) guesses before you spend DFT.**
 Works with any TS generator and any elements, from a web app, the command line, Python, or an AI agent over MCP.
 
-> **Open Scientific Intelligence (OSI) Hackathon 2026** ·
-> **[Live app](https://tammy357.github.io/ts-second-opinion/app/)** (runs in your browser, nothing to install) ·
-> [Showcase page](https://tammy357.github.io/ts-second-opinion/) · [Video (4 min)](https://youtu.be/zaH6y7H471k)
+> **Open Scientific Intelligence (OSI) Hackathon 2026** · solo entry · sponsor tracks: marimo, Valency MCP Bond<br>
+> **[▶ Live app](https://tammy357.github.io/ts-second-opinion/app/)** (runs in your browser, nothing to install) ·
+> **[Video (4 min)](https://youtu.be/zaH6y7H471k)** · [Showcase page](https://tammy357.github.io/ts-second-opinion/) ·
+> [Detailed results](docs/RESULTS.md)
+
+## In 60 seconds
+
+- **The problem.** About **1 in 6** GoFlow transition-state guesses has a stereocentre the wrong way round. Most are exact
+  mirror images, so they pass D-MAE, mirror-allowed RMSD and **even a DFT frequency check**. It is not only GoFlow: an
+  independent 2026 study sees the same blind spot in MolGen and TSDiff.
+- **What it does.** Chemists write rules in plain English; **Claude turns each into code, kept only if it passes 9,540
+  real DFT transition states**. The rules check every guess, mirror-repair whole mirror images, and give a verdict
+  (✓ trust, ! check with DFT, ✕ re-generate) with a **stated error rate** for what to trust (conformal selection).
+- **What it found.** Catches **93%** of wrong-handed guesses (0.2% false alarms); wrong-handed answers **17.7% → 2.3%**;
+  **80%** of reactions trusted at a guaranteed 5% error rate; **new GFN2-xTB optimisations** confirm the verdicts
+  (right TS reached for **77% / 60% / 0%** of ✓ / ! / ✕ guesses).
+- **Also new.** A data audit (51 RDB7 entries contradict their own SMILES), a mirror test for any TS metric, a
+  stereo-aware leaderboard, and panels where anyone can drop in their own reactions, test sets and datasets.
+- **Limits.** No new DFT (GFN2-xTB instead); one dataset, RDB7 (tested on out-of-distribution splits); geometry errors are
+  flagged for DFT, not fixed.
 
 ![a near-perfect TS guess with the wrong handedness](results/fig_hero_mirror.png)
 
@@ -28,7 +45,7 @@ It is not only GoFlow: on another dataset (Transition1x), an independent 2026 st
 ([ReCurveflow](https://arxiv.org/abs/2608.20869)) found that MolGen, GoFlow and TSDiff all lose 0.15–0.35 Å of
 RMSD once mirror images are no longer allowed.
 
-| On 1,194 held-out RDB7 reactions (8 GoFlow models, no DFT) | |
+| On 1,194 held-out RDB7 reactions (8 GoFlow models) | |
 |---|---|
 | Wrong-handed guesses caught by two LLM-written rules | **93%** (0.2% false alarms) |
 | Final answers with the wrong handedness, before → after checking and mirror repair | **17.7% → 2.3%** |
@@ -37,7 +54,9 @@ RMSD once mirror images are no longer allowed.
 | "Success" (D-MAE ≤ 0.2 Å) that is also correctly handed: GoFlow → with TS Second Opinion | **71% → 86.5%** |
 | **New calculations** (GFN2-xTB TS optimisation): guesses that optimise to the reference TS, ✓ trust / ! check / ✕ re-generate | **77% / 60% / 0%** |
 
-The rules repair handedness; they do not fix geometry errors (14.1% → 11.7%), which are flagged for DFT instead.
+The rules repair handedness; they do not fix geometry errors (14.1% → 11.7%), which are flagged for DFT instead (a quick
+xTB optimisation rescued only 1 of 13 flagged geometries). On reaction types never seen in training (RDB7's reaction-core
+split) and on the barrier split, the rules still catch 90% and 89% of wrong-handed guesses at 0.1% false alarms.
 New GFN2-xTB transition-state optimisations (not DFT) also show that an unrepaired mirror image optimises to a saddle point
 with the same energy and imaginary frequency as the right TS, so a frequency check passes it: 34 of 40 reactions, and it
 kept the wrong handedness in all 40.
@@ -92,9 +111,16 @@ marimo run apps/demo.py             # opens the app in your browser
 
 ![the app: examples, verdict card and linked 3D views](results/demo.gif)
 
-The app has five worked examples and a **Check your own reaction** tab. You get a verdict (✓ trust, ! check with DFT,
-✕ re-generate), the reasons, linked 3D views of the raw and repaired guesses with the stereocentres highlighted, a
-one-file report card and an ORCA input.
+**What you can do in the live app**
+
+| Section | Try this |
+|---|---|
+| 1 · Check a TS guess | Five worked examples, or upload your own reaction: verdict, reasons, linked 3D views, report card, ORCA input, a data check, and Claude's explanation |
+| 2 · Rule Studio | Replay a recorded run where Claude's first rule was rejected and rewritten, or write a new rule with Claude (your API key) |
+| 3 · How much can you trust? | Pick an error rate; conformal selection says what share of reactions you can trust |
+| 4 · Stereo-aware leaderboard | Every released GoFlow model, plus **score your own model** (or try 200 GoFlow predictions) |
+| 5 · Beyond one model and one dataset | How it differs from prior work, the field-wide evidence, **the mirror test** for any metric, **audit your own dataset**, the new xTB results, an experimental repair for partly flipped guesses |
+| 6 · Results | The figures |
 
 The same from the command line, on the bundled example:
 
@@ -191,16 +217,16 @@ TS guesses ──► run every accepted check ──► consensus among passing 
 
 | Criterion | |
 |---|---|
-| **Potential for impact** | Clear users, usable today in a browser: chemists deciding which ML transition states to send to DFT (check, repair, trust at a stated error rate); TS-model developers, who get a stereo-aware score in one click or `tsso evaluate`; and TS-dataset curators (`tsso audit`). |
+| **Potential for impact** | Clear users, usable today in a browser with their own data: chemists deciding which ML transition states to send to DFT (check, repair, trust at a stated error rate); TS-model developers, who get a stereo-aware score in one click; and dataset curators (audit your own dataset). New GFN2-xTB optimisations confirm the verdicts: the right TS is reached for 77% of trusted guesses and 0% of re-generate ones. |
 | **Innovativeness** | The obvious fixes are retraining or steering one model, or a DFT frequency check, which a mirror image passes. Instead, a model-agnostic second-opinion layer: chemists' rules in plain English become Claude-written code that must pass a data gate, a reflection repairs whole-mirror errors at no cost, and conformal selection states the error rate. |
-| **Novelty** | Post-hoc handedness checking and repair for any generator; a stereo-aware leaderboard and a mirror-image unit test for TS metrics; an audit that found 51 RDB7 reactions whose product geometry contradicts its SMILES. Open avenues: other generators and datasets, and the gated rules as steering potentials during generation. |
+| **Novelty** | Post-hoc handedness checking and repair for any generator (prior work, FK-Flow and RitS, acts inside one model); a stereo-aware leaderboard and a mirror test for any TS metric; an audit that found 51 RDB7 reactions whose product geometry contradicts its SMILES. Open avenues: other generators and datasets, DFT validation, and the gated rules as steering potentials during generation. |
 | **Relevance** | A specific problem in chemistry: transition states gate kinetics, catalysis and reaction-network studies, and every wrong guess sent to DFT costs hours. |
 
 ## Reproduce every number
 
 ```bash
 pip install -e ".[dev]"
-python -m pytest -q tests                # 24 tests
+python -m pytest -q tests                # 25 tests
 python scripts/evaluate.py               # -> results/metrics.json
 python scripts/triage_all.py 0.2         # verdicts for all 1,194 reactions -> results/triage.csv
 python scripts/benchmark.py              # mirror blindness, handedness split, risk-coverage -> results/benchmark.json
@@ -220,13 +246,12 @@ from a clone of the GoFlow repository.
 
 ## Limitations
 
-- **Generalisation beyond the training reactions.** On RDB7's reaction-core split (reaction types unseen in training)
-  and barrier split, the rules still catch 90% and 89% of wrong-handed guesses at 0.1% false alarms.
 - **Mostly retrospective.** No new DFT was run; "right" means close to RDB7's reference TS. New GFN2-xTB transition-state
   optimisations (106 reactions, `scripts/xtb_prospective.py`) confirm the mirror-image argument and the verdicts at a
   semi-empirical level; DFT would be the next step.
-- **One dataset, one model family.** Small H/C/N/O molecules (RDB7) and GoFlow models. `tsso check` accepts any elements,
-  but the rules were gated on RDB7: test them on your own reference TSs with `tsso gate` first.
+- **One dataset, one model family.** Small H/C/N/O molecules (RDB7) and GoFlow models, though tested on RDB7's
+  out-of-distribution splits. `tsso check` accepts any elements, but the rules were gated on RDB7: test them on your own
+  reference TSs with `tsso gate` first.
 - **Mirror-image errors leave the barrier unchanged.** They matter whenever stereochemistry does; for barrier heights
   alone, use the geometry-only numbers.
 - **Some choices were made after seeing test results**, and the guarantee is an average that assumes new reactions look
@@ -249,7 +274,7 @@ examples/            ready-to-run inputs         tsso/checks/   the six gated, C
 scripts/             experiments and figures     results/       metrics, figures, leaderboard, agent transcripts
 docs/RESULTS.md      detailed results            data/          GoFlow predictions + RDB7 references (gzipped JSON)
 docs/index.html      the showcase page           benchmark/     stereo-aware labels and the mirror-image unit test
-docs/app/            the in-browser app (WASM)
+docs/app/            the in-browser app (WASM)   results/xtb_prospective_*.json   the new GFN2-xTB calculations
 ```
 
 Code: MIT licence. Data files are derived from GoFlow (MIT) and RDB7; please cite both.

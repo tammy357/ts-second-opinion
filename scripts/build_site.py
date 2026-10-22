@@ -256,7 +256,8 @@ are close <b>and</b> correctly handed. Handedness stays at 82–85% correct for 
 <div class="grid2"><img class="fig" src="assets/fig_final_answer.png" alt="final answers wrong, by kind">
 <img class="fig" src="assets/fig_certify.png" alt="certified trust"></div>
 <p class="muted">Retrospective: GoFlow's released predictions for the 1,194 RDB7 test reactions; rules gated only on the 9,540
-training reactions; no new DFT. <a href="https://arxiv.org/abs/2509.01543">FK-Flow</a> (from the GoFlow group) first measured
+training reactions; no new DFT, but new GFN2-xTB transition-state optimisations confirm the verdicts
+(the right TS is reached for 77% of trusted guesses and 0% of re-generate ones). <a href="https://arxiv.org/abs/2509.01543">FK-Flow</a> (from the GoFlow group) first measured
 GoFlow's chirality errors and fixed them by steering generation; TS Second Opinion works afterwards, on any model's output.
 Full results and limitations: <a href="https://github.com/tammy357/ts-second-opinion/blob/main/docs/RESULTS.md">docs/RESULTS.md</a>.</p>
 
