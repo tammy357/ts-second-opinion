@@ -143,7 +143,9 @@ reference TS" if it reached a first-order saddle point within 0.2 Å (D-MAE) of 
 | ! check with DFT | 18 of 30 (60%) | 29 of 30 | 0.18 Å |
 | ✕ re-generate | 0 of 6 (0%) | 5 of 6 | 0.32 Å |
 
-Five of the six "re-generate" guesses still optimised to a saddle point with one imaginary frequency, so a frequency check
+A cheap optimisation does not rescue bad geometry: of the 13 sampled guesses with a geometry error before optimisation
+(D-MAE > 0.2 Å), only 1 reached the reference TS after GFN2-xTB optimisation, so sending flagged geometry to DFT, not
+to a quick xTB fix, is the right advice. Five of the six "re-generate" guesses still optimised to a saddle point with one imaginary frequency, so a frequency check
 would have accepted them, but none was the reference TS and five had the wrong handedness. The samples are small and
 deterministic (first by id), not random.
 

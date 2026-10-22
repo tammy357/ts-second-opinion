@@ -70,3 +70,11 @@ def test_mirror_test_tells_blind_metrics_from_seeing_ones():
     assert run_mirror_test(BUILT_IN['rmsd_proper_rotations'], pairs)['sees_handedness']
     with pytest.raises(ValueError):
         compile_metric('import os\ndef metric(a, b):\n    return 0.0\n')
+
+
+def test_audit_your_own_dataset_finds_the_known_problem_entries():
+    from tsso.service import audit_files
+    d = EX.parent / 'audit'
+    res = audit_files((d / 'reactions.smi').read_text(), (d / 'reactants.xyz').read_text(), (d / 'products.xyz').read_text())
+    assert res['reactions_checked'] == 150 and res['reactions_flagged'] == 10 and not res['skipped']
+    assert 'must match' in audit_files('CC>>CC\n', (d / 'reactants.xyz').read_text(), (d / 'products.xyz').read_text())['error']

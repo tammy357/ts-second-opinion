@@ -62,7 +62,8 @@ generator still gets wrong, before DFT is spent.
   reaction-network exploration): check, repair and decide what to send to DFT.
 - **Anyone building or benchmarking a 3D generative model of chiral molecules**: the mirror test tells you in one click
   whether your metric can see handedness, and `tsso evaluate` scores a model with and without it.
-- **Anyone building a reaction dataset**: `tsso audit` finds entries whose geometry contradicts their own SMILES.
+- **Anyone building a reaction dataset**: drop it into the app's "Audit your own reaction dataset" panel (or
+  `tsso.service.audit_files`) to find entries whose geometry contradicts their own SMILES.
 - **Anyone validating scientific ML outputs with LLMs**: rules written in plain English, turned into code by an LLM, and
   kept only if they pass real reference data, is a pattern that carries over to other structure predictions.
 
@@ -219,6 +220,8 @@ from a clone of the GoFlow repository.
 
 ## Limitations
 
+- **Generalisation beyond the training reactions.** On RDB7's reaction-core split (reaction types unseen in training)
+  and barrier split, the rules still catch 90% and 89% of wrong-handed guesses at 0.1% false alarms.
 - **Mostly retrospective.** No new DFT was run; "right" means close to RDB7's reference TS. New GFN2-xTB transition-state
   optimisations (106 reactions, `scripts/xtb_prospective.py`) confirm the mirror-image argument and the verdicts at a
   semi-empirical level; DFT would be the next step.

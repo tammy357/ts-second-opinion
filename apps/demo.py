@@ -714,6 +714,63 @@ def _(metric_code, metric_pick, mirror_btn, mo):
 
 
 @app.cell
+def _(ROOT, mo):
+    aud_smi = mo.ui.file(filetypes=['.smi', '.txt'], label='Reaction SMILES (.smi)')
+    aud_r = mo.ui.file(filetypes=['.xyz'], label='Reactants .xyz')
+    aud_p = mo.ui.file(filetypes=['.xyz'], label='Products .xyz')
+    aud_order = mo.ui.dropdown({'by atom-map number': 'map', 'in the order of the SMILES': 'smiles'},
+                               value='by atom-map number', label='Atoms in my files are listed')
+    aud_btn = mo.ui.run_button(label='Audit my dataset', kind='success')
+    aud_demo = mo.ui.run_button(label='Try it: 150 RDB7 reactions')
+    _d = ROOT / 'examples' / 'audit'
+    _files = mo.hstack([mo.download(data=(_d / f).read_bytes(), filename=f, label=f)
+                        for f in ('reactions.smi', 'reactants.xyz', 'products.xyz')], justify='start')
+    mo.vstack([
+        mo.md('### Audit your own reaction dataset'),
+        mo.md('Drop in a reaction dataset: one atom-mapped SMILES per line, and the reactants and products as multi-frame '
+              '`.xyz` files in the same order. It lists every reaction whose geometry contradicts its own SMILES. '
+              'Nothing leaves your computer.'),
+        mo.hstack([aud_smi, aud_r, aud_p], justify='start'), aud_order, mo.hstack([aud_btn, aud_demo], justify='start'),
+        mo.accordion({'The example files': _files})])
+    return aud_btn, aud_demo, aud_order, aud_p, aud_r, aud_smi
+
+
+@app.cell
+def _(ROOT, aud_btn, aud_demo, aud_order, aud_p, aud_r, aud_smi, mo):
+    import csv as _csv, html as _ha, io as _io
+    from tsso.service import audit_files as _audit_files
+    _t = lambda _b: _b.decode('utf-8-sig', errors='replace')
+    if aud_demo.value:
+        _d = ROOT / 'examples' / 'audit'
+        _args = ((_d / 'reactions.smi').read_text(), (_d / 'reactants.xyz').read_text(), (_d / 'products.xyz').read_text(), 'map')
+    elif aud_btn.value:
+        if not (aud_smi.value and aud_r.value and aud_p.value):
+            mo.stop(True, mo.callout(mo.md('Please add all three files.'), kind='warn'))
+        _args = (_t(aud_smi.contents()), _t(aud_r.contents()), _t(aud_p.contents()), aud_order.value)
+    else:
+        mo.stop(True)
+    try:
+        _res = _audit_files(*_args)
+    except ValueError as _e:
+        _res = {'error': str(_e)}
+    if 'error' in _res:
+        mo.stop(True, mo.callout(mo.Html(f'<b>Could not audit these files.</b> {_ha.escape(_res["error"])}'), kind='danger'))
+    _rows = [{'reaction (line)': _f['reaction'], 'structure': _i['side'], 'atoms': _i['atoms'],
+              'distance (Å)': _i['distance_A'], 'problem': _i['kind']} for _f in _res['flagged'] for _i in _f['issues']]
+    _buf = _io.StringIO(); _w = _csv.writer(_buf); _w.writerow(['reaction_line', 'structure', 'atoms', 'distance_A', 'problem'])
+    for _r in _rows:
+        _w.writerow(list(_r.values()))
+    _skip = (f" {len(_res['skipped'])} could not be read (first: line {_res['skipped'][0]['reaction']}: "
+             f"{_res['skipped'][0]['reason'][:120]})." if _res['skipped'] else '')
+    mo.vstack([
+        mo.callout(mo.md(f"**{_res['reactions_flagged']} of {_res['reactions_checked']} reactions** have a structure whose "
+                         f"bonding contradicts the SMILES.{_skip}"), kind='warn' if _res['reactions_flagged'] else 'success'),
+        mo.ui.table(_rows, selection=None, page_size=8) if _rows else mo.md(''),
+        mo.download(data=_buf.getvalue().encode(), filename='audit.csv', label='Download the list (.csv)') if _rows else mo.md('')])
+    return
+
+
+@app.cell
 def _(mo):
     _rows = [('✓ trust', '23 of 30 (77%)', '28 of 30', '0.07 Å'), ('! check with DFT', '18 of 30 (60%)', '29 of 30', '0.18 Å'),
              ('✕ re-generate', '0 of 6 (0%)', '5 of 6', '0.32 Å')]

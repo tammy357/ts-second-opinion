@@ -248,6 +248,25 @@ def audit_rdb7(limit=20):
                        'single-bond distance that the SMILES does not bond, or a SMILES bond with the atoms far apart).'}
 
 
+def audit_files(reactions, reactants, products, order='map'):
+    """Audit your own reaction dataset: one atom-mapped SMILES per line, and multi-frame reactant and product .xyz (one
+    frame per reaction, same order). Returns every reaction whose geometry contradicts its SMILES (see tsso.audit)."""
+    smiles = [ln.split()[0] for ln in (reactions.splitlines() if isinstance(reactions, str) else reactions) if ln.strip()]
+    R, P = _frames(reactants), _frames(products)
+    if not (len(R) == len(P) == len(smiles)):
+        return {'error': f'{len(smiles)} reactions, {len(R)} reactant frames and {len(P)} product frames: they must match'}
+    flagged, skipped = [], []
+    for k, (smi, (rs, rx), (ps, px)) in enumerate(zip(smiles, R, P)):
+        rxn, err = build_reaction(smi, _xyz_text(rs, rx), _xyz_text(ps, px), [_xyz_text(rs, rx)], order)
+        if err:
+            skipped.append({'reaction': k + 1, 'reason': err}); continue
+        issues = audit_reaction(rxn)
+        if issues:
+            flagged.append({'reaction': k + 1, 'smiles': smi, 'issues': issues})
+    return {'reactions_checked': len(smiles) - len(skipped), 'reactions_flagged': len(flagged), 'flagged': flagged,
+            'skipped': skipped}
+
+
 def triage_structures(mapped_reaction_smiles, reactant_xyz, product_xyz, guesses_xyz, order='map'):
     """MCP/CLI wrapper around second_opinion for xyz text."""
     return second_opinion(mapped_reaction_smiles, reactant_xyz, product_xyz, list(guesses_xyz), order)

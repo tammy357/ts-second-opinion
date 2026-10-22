@@ -17,7 +17,8 @@ FILES = (['results/' + f for f in ('metrics.json', 'triage_summary.json', 'certi
                                    'fig_final_answer.png', 'fig_certify.png', 'fig_risk_coverage.png')]
          + ['examples/rdb7_3509/' + f for f in ('reaction.smi', 'reactant.xyz', 'product.xyz', 'guesses.xyz')]
          + ['examples/evaluate/' + f for f in ('predictions.xyz', 'references.xyz', 'reactions.smi')]
-         + ['benchmark/' + f for f in ('mirror_test_references.xyz', 'mirror_test_true_references.xyz')])
+         + ['benchmark/' + f for f in ('mirror_test_references.xyz', 'mirror_test_true_references.xyz')]
+         + ['examples/audit/' + f for f in ('reactions.smi', 'reactants.xyz', 'products.xyz')])
 
 
 def bundle():
