@@ -1,0 +1,7 @@
+numpy>=1.26
+scikit-learn>=1.4
+matplotlib>=3.8
+marimo>=0.9
+mcp>=1.9,<2      # MCP server for agents (tsso mcp)
+rdkit>=2024.3
+# optional: anthropic>=0.40   (use the Anthropic API instead of the Claude Code CLI)

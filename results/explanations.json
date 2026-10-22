@@ -1,0 +1,25 @@
+{
+  "model": "Claude via the Claude Code CLI",
+  "examples": {
+    "3509": {
+      "verdict": "green",
+      "explanation": "The verdict is green, but only for the mirror-image repaired version of the best guess: all 8 raw guesses broke the chirality rule, and the repaired one has C2 matching the reactant. The mirror flip changes no interatomic distance, and the unrepaired guess has the same energy and frequencies, so a DFT frequency check would not have caught the wrong handedness. Next, use the repaired structure and not the raw model output. The models agree closely (0.024 A against a 0.109 A review cut-off), and the largest spread, 0.09 A at H8-H14, involves no forming or breaking bond."
+    },
+    "5877": {
+      "verdict": "red",
+      "explanation": "This guess is red: none of the 8 model guesses pass every rule, and all of them fail the product-stereo check. The recommended guess has the C2 stereocentre inverted relative to the product (its signed volume is +0.75 at the TS but -0.72 in the product), while C3 and C5 are correct. Mirroring cannot repair it, because only some of the stereocentres are wrong and a mirror image would flip the correct ones too, so re-generate the guess rather than patching it or sending it to DFT."
+    },
+    "1292": {
+      "verdict": "amber",
+      "explanation": "Amber means this guess should go to DFT rather than be trusted outright: the recommended guess has both stereocentres (C2 and C4) matching the product, but only 2 of the 8 model guesses pass every rule, and the six that failed all broke the product-stereo check. The chosen guess also disagrees with the other models more than the review cut-off allows (0.273 \u00c5 against 0.109 \u00c5), and the models differ most over the H7\u2013H13 distance (0.85 \u00c5 spread), which is not a forming or breaking bond, so it is a looser, less decisive part of the structure. Next, run a DFT check on the recommended guess, and don't try a repair, since nothing in these facts says a particular fix would work."
+    },
+    "2577": {
+      "verdict": "green",
+      "explanation": "This guess is a green: all 8 model guesses pass every rule, and the recommended one has the right handedness at both stereocentres (C2 and C3) when compared against both the reactant and the product. The models also agree closely with each other, since the chosen guess differs from the others by only 0.022 \u00c5 on average, well under the 0.109 \u00c5 review cut-off, and the biggest spread is a small 0.04 \u00c5 on C6-H7, which isn't a forming or breaking bond. So you can reasonably trust this geometry and take it forward to your next step (for example DFT refinement or a frequency check), with no repair needed, though this verdict covers handedness and model agreement, not a guarantee that the geometry itself is exact."
+    },
+    "1093": {
+      "verdict": "red",
+      "explanation": "Don't trust this guess: all 8 model guesses broke the same rule, because the N5-O6 bond is 2.78 \u00c5 in the TS while the reactant (1.38 \u00c5) and product (1.45 \u00c5) both have it much shorter, well outside the 0.35 \u00c5 tolerance. The models agree with each other fairly closely (0.074 \u00c5 mean disagreement, under the 0.109 \u00c5 review cut-off), so that agreement shouldn't reassure you, since they all share the same fault. The next step is to re-generate the TS for this reaction instead of spending DFT on it, and the facts here don't support a specific repair."
+    }
+  }
+}

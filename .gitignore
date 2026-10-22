@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+__marimo__/
+.marimo/
+.pytest_cache/
+.DS_Store
+*.egg-info/
+build/
+dist/
+.venv/

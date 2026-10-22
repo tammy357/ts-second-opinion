@@ -1,0 +1,33 @@
+{
+  "budget": 0.2,
+  "amber_cutoff_A": 0.10873146814426746,
+  "n": 1194,
+  "verdicts": {
+    "green": {
+      "reactions": 951,
+      "share": 0.7964824120603015,
+      "any_bad_rate": 0.06203995793901157,
+      "geometry_bad_rate": 0.04416403785488959,
+      "stereo_wrong_rate": 0.017875920084121977,
+      "mean_dmae_A": 0.07643054155079718
+    },
+    "amber": {
+      "reactions": 237,
+      "share": 0.1984924623115578,
+      "any_bad_rate": 0.4050632911392405,
+      "geometry_bad_rate": 0.39662447257383965,
+      "stereo_wrong_rate": 0.02109704641350211,
+      "mean_dmae_A": 0.18541997529651216
+    },
+    "red": {
+      "reactions": 6,
+      "share": 0.005025125628140704,
+      "any_bad_rate": 1.0,
+      "geometry_bad_rate": 0.6666666666666666,
+      "stereo_wrong_rate": 0.8333333333333334,
+      "mean_dmae_A": 0.2512952462987898
+    }
+  },
+  "bad_guesses_in_flagged": 0.6335403726708074,
+  "mirror_repairs": 80
+}

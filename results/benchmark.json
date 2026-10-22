@@ -1,0 +1,54 @@
+{
+  "mirror_blindness": {
+    "n_reactions_with_stereocentres": 447,
+    "mirror_of_reference_dmae_max_A": 0.0,
+    "mirror_of_reference_rmsd_reflection_allowed_max_A": 8.652164751080277e-15,
+    "mirror_of_reference_rmsd_proper_rotation_median_A": 1.5005613544767202
+  },
+  "wrong_handed_guesses": {
+    "share_of_all_guesses": 0.17692629815745395,
+    "share_of_wrong_handed_with_dmae_below_0.2A": 0.8502958579881656,
+    "median_dmae_wrong_handed_A": 0.08475775994673086,
+    "median_dmae_right_handed_A": 0.08074984321455274,
+    "success_rate_dmae_only": 0.8586683417085427,
+    "success_rate_dmae_and_stereo": 0.7082286432160804,
+    "n_wrong_handed": 1690,
+    "n_whole_mirror_images": 1514,
+    "share_whole_mirror_images": 0.8958579881656805,
+    "share_partial_flips": 0.10414201183431948,
+    "share_whole_mirror_with_dmae_below_0.2A": 0.8943196829590488
+  },
+  "risk_coverage": {
+    "aurc_single_model_with_disagreement": 0.2049349525359004,
+    "aurc_pipeline": 0.051418283349415624,
+    "aurc_pipeline_oracle_order": 0.010041552453585878,
+    "risk_at_50pct_coverage": {
+      "single_model_with_disagreement": 0.1894891122278057,
+      "pipeline": 0.038525963149078725
+    },
+    "risk_at_80pct_coverage": {
+      "single_model_with_disagreement": 0.2255235602094241,
+      "pipeline": 0.06387434554973823
+    },
+    "risk_at_full_coverage": {
+      "single_model": 0.29177135678391963,
+      "pipeline": 0.13484087102177555
+    }
+  },
+  "risk_coverage_geometry_only": {
+    "aurc_single_model_with_disagreement": 0.038694612664786056,
+    "aurc_pipeline": 0.031835758271064454,
+    "risk_at_50pct_coverage": {
+      "single_model_with_disagreement": 0.024916247906197654,
+      "pipeline": 0.021775544388609715
+    },
+    "risk_at_80pct_coverage": {
+      "single_model_with_disagreement": 0.062172774869109944,
+      "pipeline": 0.04607329842931937
+    },
+    "risk_at_full_coverage": {
+      "single_model": 0.14133165829145727,
+      "pipeline": 0.11725293132328309
+    }
+  }
+}

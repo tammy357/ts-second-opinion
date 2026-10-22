@@ -1,0 +1,142 @@
+{
+  "note": "success = D-MAE <= 0.2 A vs the RDB7 reference TS; handedness = every stereocentre matches the reference",
+  "rows": [
+    {
+      "method": "GoFlow, 8 seeds (mean \u00b1 s.d.)",
+      "size": 256,
+      "test_set": "random split (1,194)",
+      "mean_dmae_A": 0.10953273350862572,
+      "mean_rmsd_mirror_allowed_A": 0.35633801246074304,
+      "success_dmae_only": 0.8586683417085427,
+      "handedness_correct": 0.823073701842546,
+      "success_dmae_and_handedness": 0.7082286432160805,
+      "sd": {
+        "mean_dmae_A": 0.0030583664684674695,
+        "mean_rmsd_mirror_allowed_A": 0.0062634659043954355,
+        "success_dmae_only": 0.004842978855201158,
+        "handedness_correct": 0.006800829886478941,
+        "success_dmae_and_handedness": 0.005786437858222562
+      }
+    },
+    {
+      "method": "GoFlow, size run 1",
+      "size": 64,
+      "test_set": "random split (1,194)",
+      "mean_dmae_A": 0.1627453233740876,
+      "mean_rmsd_mirror_allowed_A": 0.4939092686006026,
+      "success_dmae_only": 0.7219430485762144,
+      "handedness_correct": 0.8500837520938024,
+      "success_dmae_and_handedness": 0.61892797319933
+    },
+    {
+      "method": "GoFlow, size run 2",
+      "size": 128,
+      "test_set": "random split (1,194)",
+      "mean_dmae_A": 0.12373343823021273,
+      "mean_rmsd_mirror_allowed_A": 0.40339046889026864,
+      "success_dmae_only": 0.8249581239530989,
+      "handedness_correct": 0.838358458961474,
+      "success_dmae_and_handedness": 0.6943048576214406
+    },
+    {
+      "method": "GoFlow, size run 3",
+      "size": 256,
+      "test_set": "random split (1,194)",
+      "mean_dmae_A": 0.1022694912106642,
+      "mean_rmsd_mirror_allowed_A": 0.3351154733788006,
+      "success_dmae_only": 0.8835845896147404,
+      "handedness_correct": 0.8241206030150754,
+      "success_dmae_and_handedness": 0.7294807370184254
+    },
+    {
+      "method": "GoFlow, size run 4",
+      "size": 256,
+      "test_set": "random split (1,194)",
+      "mean_dmae_A": 0.10534690836677027,
+      "mean_rmsd_mirror_allowed_A": 0.34306789323903464,
+      "success_dmae_only": 0.8609715242881072,
+      "handedness_correct": 0.830820770519263,
+      "success_dmae_and_handedness": 0.7127303182579564
+    },
+    {
+      "method": "GoFlow, size run 5",
+      "size": 512,
+      "test_set": "random split (1,194)",
+      "mean_dmae_A": 0.11358530927139857,
+      "mean_rmsd_mirror_allowed_A": 0.35698312721332043,
+      "success_dmae_only": 0.8500837520938024,
+      "handedness_correct": 0.830820770519263,
+      "success_dmae_and_handedness": 0.7077051926298158
+    },
+    {
+      "method": "GoFlow, 1 model",
+      "size": 256,
+      "test_set": "reaction-core split (1,106)",
+      "mean_dmae_A": 0.13820635138816287,
+      "mean_rmsd_mirror_allowed_A": 0.42494305452920894,
+      "success_dmae_only": 0.7920433996383364,
+      "handedness_correct": 0.8381555153707052,
+      "success_dmae_and_handedness": 0.6726943942133815
+    },
+    {
+      "method": "GoFlow + TS Second Opinion (rules + mirror repair, no ensemble)",
+      "size": 256,
+      "test_set": "reaction-core split (1,106)",
+      "mean_dmae_A": 0.13820635138816287,
+      "mean_rmsd_mirror_allowed_A": 0.42494305452920894,
+      "success_dmae_only": 0.7920433996383364,
+      "handedness_correct": 0.9755877034358047,
+      "success_dmae_and_handedness": 0.7784810126582279
+    },
+    {
+      "method": "GoFlow, 1 model",
+      "size": 256,
+      "test_set": "barrier-height split (1,192)",
+      "mean_dmae_A": 0.14911096540363838,
+      "mean_rmsd_mirror_allowed_A": 0.4322859569042868,
+      "success_dmae_only": 0.74748322147651,
+      "handedness_correct": 0.834731543624161,
+      "success_dmae_and_handedness": 0.6401006711409396
+    },
+    {
+      "method": "GoFlow + TS Second Opinion (rules + mirror repair, no ensemble)",
+      "size": 256,
+      "test_set": "barrier-height split (1,192)",
+      "mean_dmae_A": 0.14911096540363838,
+      "mean_rmsd_mirror_allowed_A": 0.4322859569042868,
+      "success_dmae_only": 0.74748322147651,
+      "handedness_correct": 0.9639261744966443,
+      "success_dmae_and_handedness": 0.7323825503355704
+    },
+    {
+      "method": "No ML: midpoint of aligned reactant and product",
+      "size": null,
+      "test_set": "random split (1,194)",
+      "mean_dmae_A": 0.23448924993096715,
+      "mean_rmsd_mirror_allowed_A": 0.48762966530228885,
+      "success_dmae_only": 0.4564489112227806,
+      "handedness_correct": 0.9882747068676717,
+      "success_dmae_and_handedness": 0.4547738693467337
+    },
+    {
+      "method": "GoFlow 8 seeds + TS Second Opinion (final answer)",
+      "size": 256,
+      "test_set": "random split (1,194)",
+      "mean_dmae_A": 0.09894283973021292,
+      "mean_rmsd_mirror_allowed_A": 0.3137464014797358,
+      "success_dmae_only": 0.8827470686767169,
+      "handedness_correct": 0.9773869346733668,
+      "success_dmae_and_handedness": 0.8651591289782244
+    },
+    {
+      "method": "GoFlow 5 size runs + TS Second Opinion (final answer)",
+      "size": null,
+      "test_set": "random split (1,194)",
+      "mean_dmae_A": 0.10360594031540576,
+      "mean_rmsd_mirror_allowed_A": 0.3268718688711258,
+      "success_dmae_only": 0.8768844221105527,
+      "handedness_correct": 0.9773869346733668,
+      "success_dmae_and_handedness": 0.8609715242881072
+    }
+  ]
+}

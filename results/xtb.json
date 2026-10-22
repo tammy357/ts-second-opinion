@@ -1,0 +1,29 @@
+{
+  "sanity_xtb_vs_dft_barrier_of_reference_TS_spearman": 0.8763233514932154,
+  "flag_geometry_bad_auroc": {
+    "disagreement": 0.85821134621113,
+    "xtb_barrier": 0.6275568744424509,
+    "xtb_rms_gradient": 0.6465661860715834,
+    "disagreement+xtb_barrier (rank average)": 0.7915093039013759,
+    "disagreement+xtb_gradient (rank average)": 0.8062278793707551
+  },
+  "choose_one_of_8": {
+    "consensus": {
+      "mean_dmae_A": 0.09843221080318418,
+      "geometry_bad_rate": 0.11306532663316583
+    },
+    "lowest_xtb_energy": {
+      "mean_dmae_A": 0.10248096128490744,
+      "geometry_bad_rate": 0.135678391959799
+    },
+    "lowest_xtb_gradient": {
+      "mean_dmae_A": 0.10188854266422702,
+      "geometry_bad_rate": 0.13149078726968175
+    },
+    "consensus_rank+energy_rank": {
+      "mean_dmae_A": 0.0976271206594332,
+      "geometry_bad_rate": 0.11892797319932999
+    }
+  },
+  "note": "GFN2-xTB via tblite, neutral singlets assumed; energies relative to the RDB7 reactant geometry."
+}

@@ -1,0 +1,357 @@
+{
+  "method": "conformal selection (Jin & Candes, JMLR 2023): BH on conformal p-values; trust score = -(model disagreement + 10 if a rule is still broken)",
+  "n_reactions": 1194,
+  "calibration_share": 0.5,
+  "n_random_splits": 2000,
+  "unconditional_error_rate": {
+    "geometry": 0.11725293132328309,
+    "geometry_or_handedness": 0.13484087102177555
+  },
+  "geometry": {
+    "conformal": [
+      {
+        "target": 0.02,
+        "mean_error_among_trusted": 0.018969486079319992,
+        "error_among_trusted_95th_percentile": 0.03723900709219857,
+        "share_of_draws_above_target": 0.461,
+        "mean_share_trusted": 0.3901348408710218
+      },
+      {
+        "target": 0.03,
+        "mean_error_among_trusted": 0.02880314090843877,
+        "error_among_trusted_95th_percentile": 0.05133928571428571,
+        "share_of_draws_above_target": 0.423,
+        "mean_share_trusted": 0.5986348408710218
+      },
+      {
+        "target": 0.04,
+        "mean_error_among_trusted": 0.03895883322552089,
+        "error_among_trusted_95th_percentile": 0.06151262181806329,
+        "share_of_draws_above_target": 0.442,
+        "mean_share_trusted": 0.7197897822445561
+      },
+      {
+        "target": 0.05,
+        "mean_error_among_trusted": 0.04893306706435717,
+        "error_among_trusted_95th_percentile": 0.07364649927422094,
+        "share_of_draws_above_target": 0.4325,
+        "mean_share_trusted": 0.8030644891122278
+      },
+      {
+        "target": 0.06,
+        "mean_error_among_trusted": 0.059343898391816696,
+        "error_among_trusted_95th_percentile": 0.08472236379822362,
+        "share_of_draws_above_target": 0.45,
+        "mean_share_trusted": 0.8464438860971525
+      },
+      {
+        "target": 0.08,
+        "mean_error_among_trusted": 0.07914383264701443,
+        "error_among_trusted_95th_percentile": 0.10582945388599098,
+        "share_of_draws_above_target": 0.462,
+        "mean_share_trusted": 0.9184279731993299
+      },
+      {
+        "target": 0.1,
+        "mean_error_among_trusted": 0.09898486136645324,
+        "error_among_trusted_95th_percentile": 0.12690355329949238,
+        "share_of_draws_above_target": 0.4565,
+        "mean_share_trusted": 0.9714597989949749
+      },
+      {
+        "target": 0.12,
+        "mean_error_among_trusted": 0.1145486571789692,
+        "error_among_trusted_95th_percentile": 0.1323283082077052,
+        "share_of_draws_above_target": 0.396,
+        "mean_share_trusted": 0.9960234505862646
+      },
+      {
+        "target": 0.15,
+        "mean_error_among_trusted": 0.1171005025125628,
+        "error_among_trusted_95th_percentile": 0.1323283082077052,
+        "share_of_draws_above_target": 0.0,
+        "mean_share_trusted": 1.0
+      },
+      {
+        "target": 0.2,
+        "mean_error_among_trusted": 0.11712730318257956,
+        "error_among_trusted_95th_percentile": 0.1323283082077052,
+        "share_of_draws_above_target": 0.0,
+        "mean_share_trusted": 1.0
+      }
+    ],
+    "naive_plug_in": [
+      {
+        "target": 0.02,
+        "mean_error_among_trusted": 0.021955731131174376,
+        "error_among_trusted_95th_percentile": 0.03937525901367592,
+        "share_of_draws_above_target": 0.588,
+        "mean_share_trusted": 0.4668107202680067
+      },
+      {
+        "target": 0.03,
+        "mean_error_among_trusted": 0.03118038086262627,
+        "error_among_trusted_95th_percentile": 0.0519258359734212,
+        "share_of_draws_above_target": 0.483,
+        "mean_share_trusted": 0.6362830820770519
+      },
+      {
+        "target": 0.04,
+        "mean_error_among_trusted": 0.04108739615239017,
+        "error_among_trusted_95th_percentile": 0.061224489795918366,
+        "share_of_draws_above_target": 0.5345,
+        "mean_share_trusted": 0.7416256281407035
+      },
+      {
+        "target": 0.05,
+        "mean_error_among_trusted": 0.050464226558957666,
+        "error_among_trusted_95th_percentile": 0.07480314960629922,
+        "share_of_draws_above_target": 0.489,
+        "mean_share_trusted": 0.8139530988274707
+      },
+      {
+        "target": 0.06,
+        "mean_error_among_trusted": 0.060715167728695056,
+        "error_among_trusted_95th_percentile": 0.08534551650572253,
+        "share_of_draws_above_target": 0.508,
+        "mean_share_trusted": 0.8511892797319933
+      },
+      {
+        "target": 0.08,
+        "mean_error_among_trusted": 0.08017510154970238,
+        "error_among_trusted_95th_percentile": 0.10645724258289703,
+        "share_of_draws_above_target": 0.492,
+        "mean_share_trusted": 0.9220134003350083
+      },
+      {
+        "target": 0.1,
+        "mean_error_among_trusted": 0.09903476095093293,
+        "error_among_trusted_95th_percentile": 0.1281618887015177,
+        "share_of_draws_above_target": 0.448,
+        "mean_share_trusted": 0.9717780569514238
+      },
+      {
+        "target": 0.12,
+        "mean_error_among_trusted": 0.11403595277374436,
+        "error_among_trusted_95th_percentile": 0.1323283082077052,
+        "share_of_draws_above_target": 0.373,
+        "mean_share_trusted": 0.9949003350083753
+      },
+      {
+        "target": 0.15,
+        "mean_error_among_trusted": 0.11665838239142662,
+        "error_among_trusted_95th_percentile": 0.1323283082077052,
+        "share_of_draws_above_target": 0.0,
+        "mean_share_trusted": 0.9983484087102179
+      },
+      {
+        "target": 0.2,
+        "mean_error_among_trusted": 0.11665198364873305,
+        "error_among_trusted_95th_percentile": 0.1323283082077052,
+        "share_of_draws_above_target": 0.0,
+        "mean_share_trusted": 0.9982613065326634
+      }
+    ]
+  },
+  "geometry_or_handedness": {
+    "conformal": [
+      {
+        "target": 0.02,
+        "mean_error_among_trusted": 0.010482443702426026,
+        "error_among_trusted_95th_percentile": 0.05472636815920398,
+        "share_of_draws_above_target": 0.22,
+        "mean_share_trusted": 0.05121775544388609
+      },
+      {
+        "target": 0.03,
+        "mean_error_among_trusted": 0.023039810502842827,
+        "error_among_trusted_95th_percentile": 0.05500229357798165,
+        "share_of_draws_above_target": 0.4735,
+        "mean_share_trusted": 0.1941381909547739
+      },
+      {
+        "target": 0.04,
+        "mean_error_among_trusted": 0.03819823610722426,
+        "error_among_trusted_95th_percentile": 0.0637836656401691,
+        "share_of_draws_above_target": 0.498,
+        "mean_share_trusted": 0.44285510887772195
+      },
+      {
+        "target": 0.05,
+        "mean_error_among_trusted": 0.04921006045719745,
+        "error_among_trusted_95th_percentile": 0.07447138892559799,
+        "share_of_draws_above_target": 0.454,
+        "mean_share_trusted": 0.6272654941373534
+      },
+      {
+        "target": 0.06,
+        "mean_error_among_trusted": 0.0591403595046814,
+        "error_among_trusted_95th_percentile": 0.08600327868852459,
+        "share_of_draws_above_target": 0.467,
+        "mean_share_trusted": 0.7393484087102178
+      },
+      {
+        "target": 0.08,
+        "mean_error_among_trusted": 0.07906648544779267,
+        "error_among_trusted_95th_percentile": 0.1070110701107011,
+        "share_of_draws_above_target": 0.4775,
+        "mean_share_trusted": 0.8564480737018425
+      },
+      {
+        "target": 0.1,
+        "mean_error_among_trusted": 0.09882059451764556,
+        "error_among_trusted_95th_percentile": 0.12869565217391304,
+        "share_of_draws_above_target": 0.4555,
+        "mean_share_trusted": 0.9291423785594641
+      },
+      {
+        "target": 0.12,
+        "mean_error_among_trusted": 0.11896503862384404,
+        "error_among_trusted_95th_percentile": 0.1507537688442211,
+        "share_of_draws_above_target": 0.468,
+        "mean_share_trusted": 0.9777721943048575
+      },
+      {
+        "target": 0.15,
+        "mean_error_among_trusted": 0.13428970068222656,
+        "error_among_trusted_95th_percentile": 0.1507537688442211,
+        "share_of_draws_above_target": 0.057,
+        "mean_share_trusted": 0.9996675041876046
+      },
+      {
+        "target": 0.2,
+        "mean_error_among_trusted": 0.13505946398659965,
+        "error_among_trusted_95th_percentile": 0.1507537688442211,
+        "share_of_draws_above_target": 0.0,
+        "mean_share_trusted": 1.0
+      }
+    ],
+    "naive_plug_in": [
+      {
+        "target": 0.02,
+        "mean_error_among_trusted": 0.04542049504447189,
+        "error_among_trusted_95th_percentile": 0.2,
+        "share_of_draws_above_target": 0.6555,
+        "mean_share_trusted": 0.12472194304857621
+      },
+      {
+        "target": 0.03,
+        "mean_error_among_trusted": 0.040690296253487475,
+        "error_among_trusted_95th_percentile": 0.07079866017689843,
+        "share_of_draws_above_target": 0.65,
+        "mean_share_trusted": 0.2958425460636516
+      },
+      {
+        "target": 0.04,
+        "mean_error_among_trusted": 0.04191824391292441,
+        "error_among_trusted_95th_percentile": 0.06808312620822976,
+        "share_of_draws_above_target": 0.5405,
+        "mean_share_trusted": 0.5126465661641542
+      },
+      {
+        "target": 0.05,
+        "mean_error_among_trusted": 0.0514221896271764,
+        "error_among_trusted_95th_percentile": 0.07660497228344353,
+        "share_of_draws_above_target": 0.5145,
+        "mean_share_trusted": 0.6605335008375209
+      },
+      {
+        "target": 0.06,
+        "mean_error_among_trusted": 0.06056980244860774,
+        "error_among_trusted_95th_percentile": 0.086,
+        "share_of_draws_above_target": 0.507,
+        "mean_share_trusted": 0.754927135678392
+      },
+      {
+        "target": 0.08,
+        "mean_error_among_trusted": 0.0804750368501951,
+        "error_among_trusted_95th_percentile": 0.10952395800170013,
+        "share_of_draws_above_target": 0.5065,
+        "mean_share_trusted": 0.8618400335008375
+      },
+      {
+        "target": 0.1,
+        "mean_error_among_trusted": 0.10031332902042712,
+        "error_among_trusted_95th_percentile": 0.13037140516230186,
+        "share_of_draws_above_target": 0.463,
+        "mean_share_trusted": 0.9332989949748745
+      },
+      {
+        "target": 0.12,
+        "mean_error_among_trusted": 0.11964418224539435,
+        "error_among_trusted_95th_percentile": 0.1501177896226495,
+        "share_of_draws_above_target": 0.5,
+        "mean_share_trusted": 0.9787847571189279
+      },
+      {
+        "target": 0.15,
+        "mean_error_among_trusted": 0.1328645833532675,
+        "error_among_trusted_95th_percentile": 0.1495798319327731,
+        "share_of_draws_above_target": 0.0485,
+        "mean_share_trusted": 0.9979690117252932
+      },
+      {
+        "target": 0.2,
+        "mean_error_among_trusted": 0.13334005713536862,
+        "error_among_trusted_95th_percentile": 0.1493288590604027,
+        "share_of_draws_above_target": 0.0,
+        "mean_share_trusted": 0.9982872696817422
+      }
+    ]
+  },
+  "change_of_models": {
+    "description": "calibrate on the 8-seed ensemble (half of the reactions), certify the guesses of the 5 GoFlow size runs (four model sizes) on the other half; then recalibrate on that ensemble",
+    "geometry": {
+      "calibrated_on_8_seeds": [
+        {
+          "target": 0.05,
+          "mean_error_among_trusted": 0.02511024132294016,
+          "mean_share_trusted": 0.5257504187604691
+        },
+        {
+          "target": 0.1,
+          "mean_error_among_trusted": 0.09425690281737074,
+          "mean_share_trusted": 0.9330301507537689
+        }
+      ],
+      "recalibrated_on_5_sizes": [
+        {
+          "target": 0.05,
+          "mean_error_among_trusted": 0.04842148851642331,
+          "mean_share_trusted": 0.7415494137353433
+        },
+        {
+          "target": 0.1,
+          "mean_error_among_trusted": 0.09921833630193307,
+          "mean_share_trusted": 0.9506340033500837
+        }
+      ]
+    },
+    "geometry_or_handedness": {
+      "calibrated_on_8_seeds": [
+        {
+          "target": 0.05,
+          "mean_error_among_trusted": 0.01509289289156533,
+          "mean_share_trusted": 0.09409882747068678
+        },
+        {
+          "target": 0.1,
+          "mean_error_among_trusted": 0.07845809630297317,
+          "mean_share_trusted": 0.8219882747068676
+        }
+      ],
+      "recalibrated_on_5_sizes": [
+        {
+          "target": 0.05,
+          "mean_error_among_trusted": 0.04951696104934558,
+          "mean_share_trusted": 0.6730360134003349
+        },
+        {
+          "target": 0.1,
+          "mean_error_among_trusted": 0.09967350819473267,
+          "mean_share_trusted": 0.9160795644891123
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,19 @@
+! wB97X D4 def2-TZVP OptTS FREQ
+# TS optimisation for RDB7 reaction 8116; method follows GoFlow's tsopt.inp (github.com/heid-lab/goflow)
+# Guess: GoFlow seed model 1; verdict amber
+
+%maxcore 1500
+%pal
+  nprocs 2
+end
+
+%scf
+  Convergence Tight
+  MaxIter 500
+end
+
+%geom
+  MaxIter 500
+end
+
+* xyzfile 0 1 rxn8116_ts_guess.xyz

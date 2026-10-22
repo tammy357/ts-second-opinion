@@ -1,0 +1,84 @@
+{
+  "proposed": 8,
+  "passed_gate": 8,
+  "kept_on_selection_half": 0,
+  "report_half_auroc": {
+    "disagreement": 0.6431529998388876,
+    "disagreement+original_rules": 0.9011705333123414,
+    "disagreement+original+discovered_rules": 0.9011705333123414
+  },
+  "rules": [
+    {
+      "rule": "The forming and breaking bonds should be elongated beyond typical equilibrium bond lengths for that element pair (for example, at least about 10\u201315% longer than the longer of the reactant and product values for that bond) so the geometry is not simply a reactant or product structure.",
+      "accepted_by_gate": true,
+      "attempts": 1,
+      "reference_pass_rate": 0.9993710691823899,
+      "flag_rate_on_guesses": 0.0013609715242881072,
+      "precision_on_selection_half": 0.1111111111111111,
+      "auroc_gain_selection_half": -0.0012451078051154418
+    },
+    {
+      "rule": "For a reaction with a single forming or breaking bond between a pair of atoms, the TS bond length should lie near a sensible fraction of the way between the reactant and product values, and the sum of the fractional progress of all breaking bonds should be roughly comparable to that of all forming bonds, which keeps the TS from being strongly early or late on only one side.",
+      "accepted_by_gate": true,
+      "attempts": 3,
+      "reference_pass_rate": 0.9921383647798742,
+      "flag_rate_on_guesses": 0.0014656616415410384,
+      "precision_on_selection_half": 0.8333333333333334,
+      "auroc_gain_selection_half": -0.0002089708715855565
+    },
+    {
+      "rule": "A transferring atom (such as H moving between two heavy atoms) should have its breaking and forming bond lengths both stretched, and the donor\u2013H\u2013acceptor angle should be fairly close to linear (roughly 150\u2013180\u00b0 for intermolecular-like transfers, and not below about 100\u00b0 in small rings).",
+      "accepted_by_gate": true,
+      "attempts": 3,
+      "reference_pass_rate": 0.9986373165618448,
+      "flag_rate_on_guesses": 0.0014656616415410384,
+      "precision_on_selection_half": 0.3333333333333333,
+      "auroc_gain_selection_half": -0.0006515563861537732
+    },
+    {
+      "rule": "Ring-forming or ring-breaking reactions should have the atoms of the new cycle arranged so that the reacting atoms are held in close proximity, with the distance between the two atoms that form a new bond smaller than the distance between them in the reactant and each other pair of bonded atoms in that cycle remaining within a plausible range for a strained ring.",
+      "accepted_by_gate": true,
+      "attempts": 2,
+      "reference_pass_rate": 0.9989517819706499,
+      "flag_rate_on_guesses": 0.000628140703517588,
+      "precision_on_selection_half": null,
+      "auroc_gain_selection_half": 0.0
+    },
+    {
+      "rule": "Atoms that are directly bonded to each other and not part of the reaction should keep their bond angles within a sensible range (for example, sp3 centres near 109\u00b0, sp2 near 120\u00b0, sp near 180\u00b0) relative to the reactant and product values, with deviations allowed to grow only for atoms next to the forming or breaking bonds.",
+      "accepted_by_gate": true,
+      "attempts": 1,
+      "reference_pass_rate": 0.9980083857442348,
+      "flag_rate_on_guesses": 0.0013609715242881072,
+      "precision_on_selection_half": 0.75,
+      "auroc_gain_selection_half": -0.00020263735772685365
+    },
+    {
+      "rule": "Bond lengths between atoms that are not changing bonds but are attached to a reacting atom should lie between their reactant and product values (or be slightly changed in a way consistent with a change of bond order, such as shortening for atoms becoming double-bonded), rather than showing arbitrary distortion.",
+      "accepted_by_gate": true,
+      "attempts": 2,
+      "reference_pass_rate": 0.9980083857442348,
+      "flag_rate_on_guesses": 0.0004187604690117253,
+      "precision_on_selection_half": 0.0,
+      "auroc_gain_selection_half": 0.0
+    },
+    {
+      "rule": "A reacting atom whose bond order or hybridization changes (such as a carbon going from sp3 to sp2) should show a degree of pyramidalization at the TS intermediate between its reactant and product values, measured by an improper torsion or the sum of bond angles around it.",
+      "accepted_by_gate": true,
+      "attempts": 1,
+      "reference_pass_rate": 0.9906708595387841,
+      "flag_rate_on_guesses": 0.005757956448911223,
+      "precision_on_selection_half": 0.3333333333333333,
+      "auroc_gain_selection_half": -0.0031417564346201132
+    },
+    {
+      "rule": "Torsion angles around bonds that are not formed, broken, or changed in order should stay close to their values in the reactant or product (within about 30\u201340\u00b0), so that substituents far from the reaction centre do not rotate arbitrarily and the TS stays connected to both endpoints.",
+      "accepted_by_gate": true,
+      "attempts": 1,
+      "reference_pass_rate": 0.9963312368972747,
+      "flag_rate_on_guesses": 0.05705611390284757,
+      "precision_on_selection_half": 0.8207885304659498,
+      "auroc_gain_selection_half": -0.008275510507535389
+    }
+  ]
+}

@@ -1,0 +1,126 @@
+{
+  "claude_authored": {
+    "rules": {
+      "chirality": {
+        "gate_accepts_real_TS": 1.0,
+        "gate_rejects_mirror": 0.25041928721174006,
+        "gate_rejects_noisy": 0.0,
+        "gate_accepted": true,
+        "test_flag_rate": 0.10709798994974874,
+        "test_precision_any_bad": 0.9990224828934506,
+        "test_recall_handedness_errors": 0.6047337278106509
+      },
+      "clash": {
+        "gate_accepts_real_TS": 0.9929769392033543,
+        "gate_rejects_mirror": 0.007023060796645702,
+        "gate_rejects_noisy": 0.23731656184486374,
+        "gate_accepted": true,
+        "test_flag_rate": 0.011411222780569514,
+        "test_precision_any_bad": 0.25688073394495414,
+        "test_recall_handedness_errors": 0.0053254437869822485
+      },
+      "planarity": {
+        "gate_accepts_real_TS": 1.0,
+        "gate_rejects_mirror": 0.0,
+        "gate_rejects_noisy": 0.014884696016771488,
+        "gate_accepted": true,
+        "test_flag_rate": 0.0,
+        "test_precision_any_bad": null,
+        "test_recall_handedness_errors": 0.0
+      },
+      "product_stereo": {
+        "gate_accepts_real_TS": 0.9982180293501048,
+        "gate_rejects_mirror": 0.33459119496855344,
+        "gate_rejects_noisy": 0.016666666666666666,
+        "gate_accepted": true,
+        "test_flag_rate": 0.15556951423785595,
+        "test_precision_any_bad": 0.9966352624495289,
+        "test_recall_handedness_errors": 0.8710059171597633
+      },
+      "reacting_bonds": {
+        "gate_accepts_real_TS": 0.9924528301886792,
+        "gate_rejects_mirror": 0.007547169811320755,
+        "gate_rejects_noisy": 0.11771488469601678,
+        "gate_accepted": true,
+        "test_flag_rate": 0.0024078726968174203,
+        "test_precision_any_bad": 0.9130434782608695,
+        "test_recall_handedness_errors": 0.004733727810650888
+      },
+      "spectator_bonds": {
+        "gate_accepts_real_TS": 0.9961215932914046,
+        "gate_rejects_mirror": 0.0038784067085953877,
+        "gate_rejects_noisy": 0.9926624737945493,
+        "gate_accepted": true,
+        "test_flag_rate": 0.0018844221105527637,
+        "test_precision_any_bad": 0.7777777777777778,
+        "test_recall_handedness_errors": 0.005917159763313609
+      }
+    },
+    "pipeline": {
+      "final_geometry_wrong": 0.11725293132328309,
+      "final_handedness_wrong": 0.022613065326633167
+    }
+  },
+  "direct_drafts": {
+    "rules": {
+      "chirality": {
+        "gate_accepts_real_TS": 1.0,
+        "gate_rejects_mirror": 0.25041928721174006,
+        "gate_rejects_noisy": 0.016247379454926623,
+        "gate_accepted": true,
+        "test_flag_rate": 0.10699329983249581,
+        "test_precision_any_bad": 1.0,
+        "test_recall_handedness_errors": 0.6047337278106509
+      },
+      "clash": {
+        "gate_accepts_real_TS": 0.9958071278825996,
+        "gate_rejects_mirror": 0.0041928721174004195,
+        "gate_rejects_noisy": 0.2672955974842767,
+        "gate_accepted": true,
+        "test_flag_rate": 0.006072026800670017,
+        "test_precision_any_bad": 0.3793103448275862,
+        "test_recall_handedness_errors": 0.004142011834319527
+      },
+      "planarity": {
+        "gate_accepts_real_TS": 0.9958071278825996,
+        "gate_rejects_mirror": 0.0041928721174004195,
+        "gate_rejects_noisy": 0.1149895178197065,
+        "gate_accepted": true,
+        "test_flag_rate": 0.005339195979899497,
+        "test_precision_any_bad": 0.13725490196078433,
+        "test_recall_handedness_errors": 0.0
+      },
+      "product_stereo": {
+        "gate_accepts_real_TS": 0.9907756813417191,
+        "gate_rejects_mirror": 0.3538784067085954,
+        "gate_rejects_noisy": 0.04025157232704402,
+        "gate_accepted": true,
+        "test_flag_rate": 0.17200586264656617,
+        "test_precision_any_bad": 0.9689592209373098,
+        "test_recall_handedness_errors": 0.9325443786982248
+      },
+      "reacting_bonds": {
+        "gate_accepts_real_TS": 0.9952830188679245,
+        "gate_rejects_mirror": 0.0047169811320754715,
+        "gate_rejects_noisy": 0.15146750524109015,
+        "gate_accepted": true,
+        "test_flag_rate": 0.002931323283082077,
+        "test_precision_any_bad": 0.6785714285714286,
+        "test_recall_handedness_errors": 0.004142011834319527
+      },
+      "spectator_bonds": {
+        "gate_accepts_real_TS": 0.9963312368972747,
+        "gate_rejects_mirror": 0.003668763102725367,
+        "gate_rejects_noisy": 0.990461215932914,
+        "gate_accepted": true,
+        "test_flag_rate": 0.000628140703517588,
+        "test_precision_any_bad": 0.6666666666666666,
+        "test_recall_handedness_errors": 0.002366863905325444
+      }
+    },
+    "pipeline": {
+      "final_geometry_wrong": 0.11641541038525963,
+      "final_handedness_wrong": 0.01423785594639866
+    }
+  }
+}

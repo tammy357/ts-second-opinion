@@ -1,0 +1,36 @@
+cff-version: 1.2.0
+message: "If you use TS Second Opinion, please cite it as below, together with GoFlow and RDB7."
+title: "TS Second Opinion: checking, repairing and triaging machine-learned transition states with LLM-written, data-gated rules"
+type: software
+authors:
+  - name: "TS Second Opinion contributors"
+version: 0.2.0
+date-released: 2026-10-22
+license: MIT
+repository-code: "https://github.com/tammy357/ts-second-opinion"
+keywords:
+  - transition state
+  - computational chemistry
+  - stereochemistry
+  - large language models
+  - model context protocol
+  - conformal prediction
+references:
+  - type: article
+    title: "GoFlow: efficient transition state geometry prediction with flow matching and E(3)-equivariant neural networks"
+    authors:
+      - family-names: Galustian
+      - family-names: Mark
+      - family-names: Karwounopoulos
+      - family-names: Kovar
+      - family-names: Heid
+    journal: "Digital Discovery"
+    year: 2025
+  - type: article
+    title: "High accuracy barrier heights, enthalpies, and rate coefficients for chemical reactions"
+    authors:
+      - family-names: Spiekermann
+      - family-names: Pattanaik
+      - family-names: Green
+    journal: "Scientific Data"
+    year: 2022

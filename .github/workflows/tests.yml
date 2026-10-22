@@ -1,0 +1,22 @@
+name: tests
+on:
+  push:
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: pip install -e ".[dev]"
+      - run: python -m pytest -q tests
+      - name: Quickstart from the README
+        run: |
+          tsso check --smiles examples/rdb7_3509/reaction.smi --reactant examples/rdb7_3509/reactant.xyz \
+                     --product examples/rdb7_3509/product.xyz examples/rdb7_3509/guesses.xyz
+          tsso evaluate examples/evaluate/predictions.xyz examples/evaluate/references.xyz examples/evaluate/reactions.smi

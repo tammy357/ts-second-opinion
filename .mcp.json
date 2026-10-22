@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "ts-second-opinion": {
+      "command": "tsso",
+      "args": ["mcp"]
+    }
+  }
+}

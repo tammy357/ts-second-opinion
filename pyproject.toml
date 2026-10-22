@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ts-second-opinion"
+version = "0.2.0"
+description = "Check, repair and triage machine-learned transition-state guesses before spending DFT, with LLM-written rules tested on real data"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [{name = "TS Second Opinion contributors"}]
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.26", "scikit-learn>=1.4", "matplotlib>=3.8", "marimo>=0.9", "mcp>=1.9,<2", "rdkit>=2024.3"]
+keywords = ["transition state", "computational chemistry", "machine learning", "LLM", "MCP", "stereochemistry", "conformal prediction"]
+classifiers = ["Programming Language :: Python :: 3", "License :: OSI Approved :: MIT License",
+               "Topic :: Scientific/Engineering :: Chemistry", "Intended Audience :: Science/Research"]
+
+[project.urls]
+Homepage = "https://github.com/tammy357/ts-second-opinion"
+Issues = "https://github.com/tammy357/ts-second-opinion/issues"
+
+[project.optional-dependencies]
+dev = ["pytest>=7"]
+xtb = ["tblite>=0.4", "scipy"]
+api = ["anthropic>=0.40"]
+
+[project.scripts]
+tsso = "tsso.cli:main"
+
+[tool.setuptools]
+packages = ["tsso"]
+
+[tool.setuptools.package-data]
+tsso = ["checks/*.py", "checks_user/*.py", "assets/*"]

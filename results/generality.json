@@ -1,0 +1,58 @@
+{
+  "A_five_model_sizes": {
+    "n_reactions": 1194,
+    "n_models": 5,
+    "per_model_dmae_A": [
+      0.163,
+      0.124,
+      0.102,
+      0.105,
+      0.114
+    ],
+    "per_model_stereo_wrong": [
+      0.15,
+      0.162,
+      0.176,
+      0.169,
+      0.169
+    ],
+    "stereo_rule_recall": 0.9168356997971603,
+    "stereo_rule_false_alarm": 0.002407704654895666,
+    "wrong_single_model_avg": 0.3073701842546064,
+    "wrong_after_pipeline": 0.1390284757118928,
+    "auroc_any_bad": {
+      "disagreement": 0.6982968252303252,
+      "disagreement+rules": 0.9111559337407676
+    }
+  },
+  "B_reaction_core_split": {
+    "n_reactions": 1106,
+    "dmae_A": 0.13820635138816287,
+    "stereo_wrong": 0.16184448462929477,
+    "stereo_rule_recall": 0.9050279329608939,
+    "stereo_rule_false_alarm": 0.0010787486515641855,
+    "wrong_before": 0.32730560578661844,
+    "wrong_after_rules_and_mirror": 0.22151898734177214,
+    "still_flagged_after_repair": 0.017179023508137433,
+    "reference_TS_pass_all_rules": 0.9773960216998192
+  },
+  "B_barrier_split": {
+    "n_reactions": 1192,
+    "dmae_A": 0.14911096540363838,
+    "stereo_wrong": 0.16526845637583892,
+    "stereo_rule_recall": 0.8883248730964467,
+    "stereo_rule_false_alarm": 0.0010050251256281408,
+    "wrong_before": 0.3598993288590604,
+    "wrong_after_rules_and_mirror": 0.2676174496644295,
+    "still_flagged_after_repair": 0.027684563758389263,
+    "reference_TS_pass_all_rules": 0.9605704697986577
+  },
+  "C_naive_midpoint": {
+    "dmae_A": 0.23448924993096715,
+    "stereo_wrong": 0.011725293132328308,
+    "flagged_by_rules": 0.43467336683417085,
+    "wrong": 0.5452261306532663,
+    "wrong_among_flagged": 0.7610789980732178,
+    "wrong_among_unflagged": 0.37925925925925924
+  }
+}
