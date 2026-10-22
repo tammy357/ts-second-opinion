@@ -126,6 +126,17 @@ native split) reports reflection-invariant RMSD against chirality-preserving RMS
 Their headline metric is still the reflection-invariant one. Neither that study nor the 2026 robustness study of React-OT
 (Darouich et al., arXiv:2601.16469) checks, repairs or filters TS guesses for handedness after generation.
 
+### Closest prior work, found with Valency MCP Bond
+
+A literature scan with the Valency MCP Bond server (semantic search across ChemRxiv, arXiv and PubMed, 2023 onwards)
+found stereo-aware *generation*: RitS (Nikitin, Anstine & Isayev, ChemRxiv 2026, doi:10.26434/chemrxiv.15001681)
+encodes product chirality in the input graph so that the model generates the intended diastereomeric TS, and FK-Flow
+steers GoFlow at inference time. Both act inside one model. It also found a 2026 review of TS evaluation practice (Sain,
+ChemRxiv 2026, doi:10.26434/chemrxiv.15009215) asking what reported accuracies certify, and a validation-focused TS
+generator (Kairos-GFM, bioRxiv 2026) showing that low RMSD does not guarantee the intended reaction channel. We found no
+tool that checks, repairs and triages the handedness of any generator's TS guesses after generation, gives a stated
+error rate for the ones to trust, or tests TS metrics for mirror blindness.
+
 ### Can partial flips be repaired?
 
 Mostly not usefully. We tried a local "umbrella" inversion: reflect the wrong stereocentre and its smallest terminal

@@ -149,7 +149,11 @@ TS guesses ──► run every accepted check ──► consensus among passing 
   real DFT transition states and sends the failures back until it passes. Checks run in a sandbox that hides the
   reference TS. The app's Rule Studio replays real runs where the first attempt was rejected.
 - **Agents.** An MCP server and two Claude Code commands let an agent triage reactions, certify, evaluate generators and
-  write new rules (`/new-rule`, `/second-opinion`; with the Valency server connected, it adds related ChemRxiv reading).
+  write new rules (`/new-rule`, `/second-opinion`). With **Valency MCP Bond** connected, `/second-opinion` adds related
+  reading from ChemRxiv, arXiv and PubMed to each report; see the recorded run in
+  [results/second_opinion_report.md](results/second_opinion_report.md). Valency also found the closest prior work:
+  [RitS](https://doi.org/10.26434/chemrxiv.15001681/v1) (2026) makes TS *generation* stereo-aware; TS Second Opinion
+  checks and repairs any generator's output afterwards.
 - **Explanations.** Claude explains each verdict in plain English, from the facts the tool computed.
 - **Honest comparison.** Claude's checks perform about the same as the same rules written directly as code. The value of
   the LLM is access (no coding needed); what makes any check trustworthy is the gate. Claude also proposed 8 rules of its

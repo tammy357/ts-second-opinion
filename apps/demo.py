@@ -707,7 +707,10 @@ def _(mo):
 - **Partial flips.** Inverting only the wrong centre (the experimental button above, on example 5877) fixed handedness in
   40 of 49 single GoFlow guesses and broke none, but 41 of the 49 had other geometry errors, so the pipeline still says
   re-generate.
-- **Score any generator** with the panel under the leaderboard, or `tsso evaluate`.""")
+- **Score any generator** with the panel under the leaderboard, or `tsso evaluate`.
+- **Literature, via Valency MCP Bond.** With Valency connected, the `/second-opinion` agent adds related reading to
+  each report (results/second_opinion_report.md). Its scan found that the closest prior work makes *generation*
+  stereo-aware (RitS, ChemRxiv 2026; FK-Flow); none checks and repairs any generator's output afterwards.""")
     return
 
 
