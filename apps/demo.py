@@ -1,9 +1,10 @@
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["marimo>=0.9", "numpy>=1.26", "rdkit>=2024.3"]
+# dependencies = ["marimo>=0.9", "numpy>=1.26", "rdkit>=2024.3; sys_platform != 'emscripten'"]
 # ///
 """TS Second Opinion app. Run inside the repository (marimo run apps/demo.py), or on its own anywhere, e.g. molab:
-it then downloads the code and data from github.com/tammy357/ts-second-opinion on first start (about 20 MB)."""
+it then downloads the code and data from github.com/tammy357/ts-second-opinion on first start (about 20 MB).
+It also runs entirely in a web browser (WebAssembly): https://tammy357.github.io/ts-second-opinion/app/"""
 import marimo
 
 __generated_with = "0.25.2"
@@ -11,11 +12,41 @@ app = marimo.App(width="medium", app_title="TS Second Opinion")
 
 
 @app.cell
-def _():
+async def _():
     import json, shutil, sys
     from pathlib import Path
     import numpy as np
     import marimo as mo
+
+    import os
+    IN_BROWSER = sys.platform == 'emscripten' or bool(os.environ.get('TSSO_SIMULATE_BROWSER'))   # the env var is for tests
+
+    async def _browser_root():
+        """In the browser (Pyodide), fetch the code and data bundle published with the GitHub Pages site."""
+        import io, zipfile
+        from pyodide.http import pyfetch
+        dest = Path('/tmp/ts-second-opinion')
+        if (dest / 'tsso' / 'checks').is_dir():
+            return dest
+        urls = []
+        try:
+            _loc = str(mo.notebook_location())
+            if _loc.startswith('http'):
+                urls.append(_loc.rstrip('/') + '/bundle.zip')
+        except Exception:
+            pass
+        urls += ['https://tammy357.github.io/ts-second-opinion/app/bundle.zip',
+                 'https://raw.githubusercontent.com/tammy357/ts-second-opinion/main/docs/app/bundle.zip']
+        with mo.status.spinner(title='Loading the rules and the example data (about 2 MB)...'):
+            for _u in urls:
+                try:
+                    _r = await pyfetch(_u)
+                    if _r.ok:
+                        zipfile.ZipFile(io.BytesIO(await _r.bytes())).extractall(dest)
+                        return dest
+                except Exception:
+                    continue
+        raise RuntimeError('Could not download the app bundle from ' + ', '.join(urls))
 
     def _find_root():
         try:
@@ -43,7 +74,7 @@ def _():
                 shutil.move(str(top), str(cache))
         return cache
 
-    ROOT = _find_root()
+    ROOT = (await _browser_root()) if IN_BROWSER else _find_root()
     sys.path.insert(0, str(ROOT))
     from tsso.data import load_reactions
     from tsso.triage import load_checks, triage, ORCA_TEMPLATE
@@ -56,14 +87,15 @@ def _():
     from tsso.metrics import handedness_correct
     from tsso.sandbox import run_check
     from tsso.llm import available_backends
-    return (ORCA_TEMPLATE, ROOT, available_backends, build_reaction, charge_and_multiplicity, compare_html, dmae,
-            handedness_correct, json, load_checks, load_reactions, mo, np, report_html, run_check, shutil,
+    return (IN_BROWSER, ORCA_TEMPLATE, ROOT, available_backends, build_reaction, charge_and_multiplicity, compare_html,
+            dmae, handedness_correct, json, load_checks, load_reactions, mo, np, report_html, run_check, shutil,
             stereocentre_status, triage)
 
 
 @app.cell
 def _(ROOT, json, load_checks, load_reactions):
-    by_id = {r.id: r for r in load_reactions()}
+    _slim = ROOT / 'data' / 'app_examples.json.gz'       # the browser bundle carries only the worked examples
+    by_id = {r.id: r for r in (load_reactions(_slim) if _slim.exists() else load_reactions())}
     checks = load_checks()
     metrics = json.load(open(ROOT / 'results' / 'metrics.json'))
     tri = json.load(open(ROOT / 'results' / 'triage_summary.json'))
@@ -342,15 +374,17 @@ def _(authoring, mo, replay):
 
 
 @app.cell
-def _(available_backends, mo):
+def _(IN_BROWSER, available_backends, mo):
     new_rule = mo.ui.text_area(placeholder='e.g. Hydrogens that move between atoms sit roughly between them at the transition state.',
                                label='Try your own rule', full_width=True)
-    write_btn = mo.ui.run_button(label='Write and test it with Claude')
+    write_btn = mo.ui.run_button(label='Write and test it with Claude', disabled=IN_BROWSER)
     _b = available_backends()
-    mo.vstack([new_rule, mo.hstack([write_btn, mo.md(
-        f"<span style='color:#55534e;font-size:12px'>LLM route: {_b[0]}"
-        f"{' (no Claude CLI or API key here: run the repository locally to write new rules)' if _b[0] == 'cache' else ''}"
-        ". Takes about 15–60 s.</span>")], justify='start')])
+    _note = ('In the browser version, writing new rules is switched off: run the repository locally with the Claude CLI '
+             'or an API key.' if IN_BROWSER else
+             f"LLM route: {_b[0]}{' (no Claude CLI or API key here: run the repository locally to write new rules)' if _b[0] == 'cache' else ''}"
+             '. Takes about 15–60 s.')
+    mo.vstack([new_rule, mo.hstack([write_btn, mo.md(f"<span style='color:#55534e;font-size:12px'>{_note}</span>")],
+                                   justify='start')])
     return new_rule, write_btn
 
 
@@ -431,9 +465,9 @@ def _(ROOT, json, mo):
 def _(ROOT, mo):
     mo.vstack([
         mo.md('## 5 · Results'),
-        mo.hstack([mo.image(ROOT / 'results' / 'fig_final_answer.png', width=470),
-                   mo.image(ROOT / 'results' / 'fig_certify.png', width=560)], widths='equal'),
-        mo.image(ROOT / 'results' / 'fig_risk_coverage.png', width=760),
+        mo.hstack([mo.image((ROOT / 'results' / 'fig_final_answer.png').read_bytes(), width=470),
+                   mo.image((ROOT / 'results' / 'fig_certify.png').read_bytes(), width=560)], widths='equal'),
+        mo.image((ROOT / 'results' / 'fig_risk_coverage.png').read_bytes(), width=760),
         mo.md("<span style='color:#55534e;font-size:12px'>Retrospective: GoFlow's released predictions for the 1,194 RDB7 "
               "test reactions; rules were gated only on the 9,540 training reactions. The GoFlow paper notes that D-MAE "
               "misses chirality errors, and FK-Flow (Mark, Galustian, Kovar & Heid, 2025) measured them and fixed them by "

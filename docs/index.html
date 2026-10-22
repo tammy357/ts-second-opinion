@@ -69,7 +69,8 @@ About one in six GoFlow guesses has a stereocentre the wrong way round, and most
 distance scores, chirality-blind RMSD and even a DFT frequency check. This page shows real results; the tool runs on any
 generator's output, with any elements.</p>
 <div class="links">
-  <a class="btn primary" href="https://github.com/tammy357/ts-second-opinion">Code on GitHub</a>
+  <a class="btn primary" href="app/">Open the live app</a>
+  <a class="btn" href="https://github.com/tammy357/ts-second-opinion">Code on GitHub</a>
   <a class="btn" href="#examples">Try the examples</a>
   <a class="btn" href="#own">Check your own reaction</a>
   <a class="btn" href="https://github.com/tammy357/ts-second-opinion/blob/main/docs/RESULTS.md">Detailed results</a>
@@ -102,7 +103,11 @@ Drag a molecule to rotate it; the two views move together.</p>
 
 <h2 id="own">2 · Check your own reaction</h2>
 <div class="card"><p style="margin-top:0">Any TS generator, any elements. You need an atom-mapped reaction SMILES (every atom mapped),
-the reactant and product as <code>.xyz</code>, and one or more TS guesses. Three commands, no GPU:</p>
+the reactant and product as <code>.xyz</code>, and one or more TS guesses.</p>
+<div class="links" style="margin:0 0 12px"><a class="btn primary" href="app/">Upload them in the live app</a></div>
+<p class="muted" style="margin-top:0">The live app is a marimo notebook running in your browser with Pyodide: nothing to install,
+and your files never leave your computer. The first load takes a little while, as Python starts in your browser. To install it instead,
+three commands, no GPU:</p>
 <pre><code>git clone https://github.com/tammy357/ts-second-opinion &amp;&amp; cd ts-second-opinion
 pip install -e .
 marimo run apps/demo.py      # the app, with an upload tab

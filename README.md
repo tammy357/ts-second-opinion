@@ -10,8 +10,8 @@
 Works with any TS generator and any elements, from a web app, the command line, Python, or an AI agent over MCP.
 
 > **Open Scientific Intelligence (OSI) Hackathon 2026** ·
-> **[Showcase page](https://tammy357.github.io/ts-second-opinion/)** with the worked examples (no install) ·
-> Video (4 min): *link to be added*
+> **[Live app](https://tammy357.github.io/ts-second-opinion/app/)** (runs in your browser, nothing to install) ·
+> [Showcase page](https://tammy357.github.io/ts-second-opinion/) · Video (4 min): *link to be added*
 
 ![a near-perfect TS guess with the wrong handedness](results/fig_hero_mirror.png)
 
@@ -38,14 +38,17 @@ Full results, caveats and every number's source: **[docs/RESULTS.md](docs/RESULT
 
 ## Quickstart
 
-**Try the app with no clone and no install step** (needs [uv](https://docs.astral.sh/uv/); the app fetches its code and
-data from this repository on first start):
+**Use it now, nothing to install:** **[open the live app](https://tammy357.github.io/ts-second-opinion/app/)**, or
+[![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/tammy357/ts-second-opinion/blob/main/apps/demo.py/wasm).
+Both run the marimo app in your browser with WebAssembly (Pyodide), so uploaded files never leave your computer. In the
+browser, a small pure-Python SMILES reader stands in for RDKit; it gives identical results on every RDB7 reaction
+(`tests/test_smiles_lite.py`). Writing new rules with Claude needs a local install.
+
+Run the same app on your machine without cloning (needs [uv](https://docs.astral.sh/uv/)):
 
 ```bash
 uvx marimo run --sandbox https://raw.githubusercontent.com/tammy357/ts-second-opinion/main/apps/demo.py
 ```
-
-Or open it on marimo's free cloud: [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/tammy357/ts-second-opinion/blob/main/apps/demo.py)
 
 To install the library, CLI and MCP server:
 
@@ -153,7 +156,7 @@ TS guesses ──► run every accepted check ──► consensus among passing 
 
 ```bash
 pip install -e ".[dev]"
-python -m pytest -q tests                # 13 tests
+python -m pytest -q tests                # 16 tests
 python scripts/evaluate.py               # -> results/metrics.json
 python scripts/triage_all.py 0.2         # verdicts for all 1,194 reactions -> results/triage.csv
 python scripts/benchmark.py              # mirror blindness, handedness split, risk-coverage -> results/benchmark.json
@@ -162,6 +165,7 @@ python scripts/leaderboard.py            # stereo-aware leaderboard -> results/l
 python scripts/ablation_authors.py       # Claude-written vs directly written checks -> results/ablation_authors.json
 python scripts/build_benchmark.py        # benchmark/ data files
 python scripts/build_site.py             # the static showcase in docs/ (GitHub Pages)
+python scripts/build_wasm.py             # the in-browser app in docs/app/
 ```
 
 Writing new rules needs the `claude` CLI or an `ANTHROPIC_API_KEY` (`pip install -e ".[api]"`). Data files are derived
@@ -195,7 +199,8 @@ apps/demo.py         the app (marimo)            tsso/          library, CLI (ts
 examples/            ready-to-run inputs         tsso/checks/   the six gated, Claude-written rules
 scripts/             experiments and figures     results/       metrics, figures, leaderboard, agent transcripts
 docs/RESULTS.md      detailed results            data/          GoFlow predictions + RDB7 references (gzipped JSON)
-docs/index.html      the live showcase page      benchmark/     stereo-aware labels and the mirror-image unit test
+docs/index.html      the showcase page           benchmark/     stereo-aware labels and the mirror-image unit test
+docs/app/            the in-browser app (WASM)
 ```
 
 Code: MIT licence. Data files are derived from GoFlow (MIT) and RDB7; please cite both.
