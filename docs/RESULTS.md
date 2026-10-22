@@ -118,6 +118,24 @@ We did not find prior work applying conformal selection to machine-learned TS gu
 methods have been used for generative molecular design ([ConfHit](https://arxiv.org/abs/2603.07371),
 [SCoRE](https://arxiv.org/abs/2603.24704)).
 
+### Is it only GoFlow?
+
+No. On Transition1x, a different dataset, the ReCurveflow study (Baek, Gim & Kang, arXiv:2608.20869, 2026; their Table 1,
+native split) reports reflection-invariant RMSD against chirality-preserving RMSD for eight generators. Three lose
+0.15–0.35 Å once mirror images are not allowed: GoFlow 0.33 → 0.61 Å, MolGen 0.27 → 0.62 Å and TSDiff 0.41 → 0.56 Å.
+Their headline metric is still the reflection-invariant one. Neither that study nor the 2026 robustness study of React-OT
+(Darouich et al., arXiv:2601.16469) checks, repairs or filters TS guesses for handedness after generation.
+
+### Can partial flips be repaired?
+
+Mostly not usefully. We tried a local "umbrella" inversion: reflect the wrong stereocentre and its smallest terminal
+branch (usually a hydrogen) through the plane of its other neighbours, which inverts that centre and keeps every bond to
+it exactly. Applied to single GoFlow guesses (9,552), it fixed the handedness of 40 of the 49 guesses it could edit and
+broke none, cutting wrong-handed single guesses from 3.3% to 2.8%. But 41 of the 49 already had a geometry error
+(D-MAE > 0.2 Å), and their mean D-MAE rose from 0.26 to 0.33 Å. In the 8-model pipeline only 5 final answers had a
+detectable wrong centre. Partly flipped guesses are usually broken in other ways too, so the verdict stays "re-generate",
+and the inversion is not part of the pipeline.
+
 ### Data audit: where RDB7's SMILES and geometries disagree
 
 The checks that test TS guesses assume the atom-mapped SMILES and the reactant and product geometries describe the same

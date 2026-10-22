@@ -24,6 +24,9 @@ even a DFT frequency check: they are transition states of the mirror-image react
 [FK-Flow](https://arxiv.org/abs/2509.01543) (from the GoFlow group) first measured these errors and fixed them by steering
 GoFlow during generation. TS Second Opinion works afterwards instead, on any generator's output, and also tells you which
 guesses to trust, with a statistical guarantee.
+It is not only GoFlow: on another dataset (Transition1x), an independent 2026 study
+([ReCurveflow](https://arxiv.org/abs/2608.20869)) found that MolGen, GoFlow and TSDiff all lose 0.15–0.35 Å of
+RMSD once mirror images are no longer allowed.
 
 | On 1,194 held-out RDB7 reactions (8 GoFlow models, no DFT) | |
 |---|---|

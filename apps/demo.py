@@ -522,6 +522,8 @@ def _(ROOT, json, mo):
                        f"<th {_th.format('right')}>Correct handedness</th><th {_th.format('right')}>Success with correct handedness</th></tr>"
                        f"{_body}</table>"),
                mo.md('Handedness stays at 82–85% correct for every model size, so a bigger model does not fix it. '
+                     'Nor is it only GoFlow: on Transition1x, an independent study (ReCurveflow, 2026) found that MolGen, '
+                     'GoFlow and TSDiff lose 0.15–0.35 Å of RMSD once mirror images are not allowed. '
                      'Add your model with `tsso evaluate` (see CONTRIBUTING.md).')])
     return
 
