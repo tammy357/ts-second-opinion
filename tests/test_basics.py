@@ -119,3 +119,24 @@ def test_report_card(tmp_path):
                          report=tmp_path / 'r.html')
     page = (tmp_path / 'r.html').read_text()
     assert out['report'] and 'Trust' in page and 'inverted' in page and '$3Dmol' in page
+
+
+FIX = 'tests/fixtures/'
+
+
+def test_upload_cases_match_the_app():
+    """The same input cases the app's upload tab is tested with in a browser."""
+    from tsso import second_opinion
+    ex, so, sn = 'examples/rdb7_3509/', FIX + 'rdb7_3509_smiles_order/', FIX + 'sn2_toy/'
+    smi = open(ex + 'reaction.smi').read().strip()
+    sn2 = open(sn + 'reaction.smi').read().strip()
+    assert second_opinion(smi, so + 'reactant.xyz', so + 'product.xyz', so + 'guesses.xyz', order='smiles')['mirror_repaired']
+    hint = second_opinion(smi, so + 'reactant.xyz', so + 'product.xyz', so + 'guesses.xyz')['error']
+    assert 'in the order of the SMILES' in hint
+    many = second_opinion(sn2, sn + 'reactant.xyz', sn + 'product.xyz', [sn + f'guess_{k}.xyz' for k in (1, 2, 3)])
+    assert many['n_guesses'] == 3 and (many['charge'], many['multiplicity']) == (-1, 1)
+    one = second_opinion(sn2, sn + 'reactant.xyz', sn + 'product.xyz', sn + 'guess_1.xyz')
+    assert one['disagreement_A'] is None and one['verdict'] in ('green', 'red')
+    assert 'atom-map' in second_opinion(sn2.replace('[H:5]', '[H]'), sn + 'reactant.xyz', sn + 'product.xyz', sn + 'guess_1.xyz')['error']
+    assert 'reactants>>products' in second_opinion('CCO', ex + 'reactant.xyz', ex + 'product.xyz', ex + 'guesses.xyz')['error']
+    assert 'atoms' in second_opinion(smi, sn + 'reactant.xyz', sn + 'product.xyz', sn + 'guess_1.xyz')['error']

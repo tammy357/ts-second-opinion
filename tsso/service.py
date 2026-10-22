@@ -180,7 +180,8 @@ def build_reaction(mapped_reaction_smiles, reactant, product, guesses, order='ma
             if order == 'map':
                 rside = mapped_reaction_smiles.split('>>')[0]
                 if sym == [want[m - 1] for m in smiles_atom_order(rside)]:
-                    hint = " It matches the SMILES atom order, so use order='smiles' (CLI: --order smiles)."
+                    hint = (" It matches the SMILES atom order: choose 'in the order of the SMILES' in the app, "
+                            "order='smiles' in Python, or --order smiles on the command line.")
             return None, f'{name}: atoms are {"".join(sym)}, expected {"".join(want)} (listed by atom-map number).{hint}'
     ref = np.full((len(atoms), 3), np.nan)
     if score_reference is not None:

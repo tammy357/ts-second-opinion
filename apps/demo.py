@@ -1,3 +1,9 @@
+# /// script
+# requires-python = ">=3.10"
+# dependencies = ["marimo>=0.9", "numpy>=1.26", "rdkit>=2024.3"]
+# ///
+"""TS Second Opinion app. Run inside the repository (marimo run apps/demo.py), or on its own anywhere, e.g. molab:
+it then downloads the code and data from github.com/tammy357/ts-second-opinion on first start (about 20 MB)."""
 import marimo
 
 __generated_with = "0.25.2"
@@ -11,7 +17,33 @@ def _():
     import numpy as np
     import marimo as mo
 
-    ROOT = Path(__file__).resolve().parent.parent
+    def _find_root():
+        try:
+            here = Path(__file__).resolve().parent.parent
+        except NameError:
+            here = Path.cwd()
+        if (here / 'tsso' / 'checks').is_dir() and (here / 'data').is_dir():
+            return here
+        import tarfile, tempfile, urllib.request
+        cache = Path(tempfile.gettempdir()) / 'ts-second-opinion-main'
+        if not (cache / 'tsso' / 'checks').is_dir():
+            url = 'https://codeload.github.com/tammy357/ts-second-opinion/tar.gz/refs/heads/main'
+            with mo.status.spinner(title='First start: downloading the code and data from GitHub (about 20 MB)...'):
+                tmp = Path(tempfile.mkdtemp())
+                archive = tmp / 'repo.tar.gz'
+                urllib.request.urlretrieve(url, archive)
+                with tarfile.open(archive) as tf:
+                    try:
+                        tf.extractall(tmp, filter='data')
+                    except TypeError:          # Python without extraction filters
+                        tf.extractall(tmp)
+                top = next(p for p in tmp.iterdir() if p.is_dir())
+                if cache.exists():
+                    shutil.rmtree(cache)
+                shutil.move(str(top), str(cache))
+        return cache
+
+    ROOT = _find_root()
     sys.path.insert(0, str(ROOT))
     from tsso.data import load_reactions
     from tsso.triage import load_checks, triage, ORCA_TEMPLATE
@@ -129,7 +161,10 @@ def _(build_reaction, by_id, charge_and_multiplicity, check_btn, checks, example
             _rxn, _err = build_reaction(smiles_in.value.strip(), reactant_in.contents().decode(),
                                         product_in.contents().decode(),
                                         [f.contents.decode() for f in guesses_in.value], order_in.value)
-        mo.stop(_err is not None, mo.callout(mo.md(f'**Could not check this reaction.** {_err}'), kind='danger'))
+        if _err is not None:
+            import html as _html
+            _msg = _html.escape(_err[0].upper() + _err[1:])
+            mo.stop(True, mo.callout(mo.Html(f'<b>Could not check this reaction.</b> {_msg}'), kind='danger'))
         rxn, ex, title = _rxn, None, 'Your reaction'
         charge, mult = charge_and_multiplicity(rxn.smiles)
     else:
@@ -218,7 +253,7 @@ def _(ORCA_TEMPLATE, charge, checks, dmae, ex, handedness_correct, mo, mult, rep
                      [f'{s} {a:.6f} {b:.6f} {c:.6f}' for s, (a, b, c) in zip(rxn.symbols, t.xyz)]) + '\n'
     _src = f"guess {t.chosen_model + 1}{' (mirror image)' if t.mirrored else ''}; verdict {t.verdict}"
     mo.vstack([mo.md('### Take it with you'), mo.hstack([
-        mo.download(data=lambda: report_html(rxn, t, checks, charge, mult, title, _score).encode(),
+        mo.download(data=report_html(rxn, t, checks, charge, mult, title, _score).encode(),
                     filename=f'{_stem}_report.html', label='Report card (.html)'),
         mo.download(data=_xyz.encode(), filename=f'{_stem}.xyz', label='Recommended TS (.xyz)'),
         mo.download(data=ORCA_TEMPLATE.format(rid=title, source=_src, xyzname=f'{_stem}.xyz', charge=charge,
