@@ -118,6 +118,20 @@ We did not find prior work applying conformal selection to machine-learned TS gu
 methods have been used for generative molecular design ([ConfHit](https://arxiv.org/abs/2603.07371),
 [SCoRE](https://arxiv.org/abs/2603.24704)).
 
+### Data audit: where RDB7's SMILES and geometries disagree
+
+The checks that test TS guesses assume the atom-mapped SMILES and the reactant and product geometries describe the same
+molecules. `tsso audit` tests that assumption directly: a structure is flagged when two atoms sit at single-bond distance
+(below 1.10x the sum of their covalent radii) but the SMILES does not bond them, or when the SMILES bonds two atoms that
+are more than 1.60x apart. In **51 of the 10,734 RDB7 reactions** used here (10 test, 41 training; 0.5%), and only ever in
+the **product** geometry, the two disagree: for example, in reaction 6295 the SMILES puts H11 on C2, but in the
+geometry it sits 1.08 A from C3 and 2.1 A from C2. Reaction 1093, one of the app's worked examples, is flagged (an N5-O6
+bond at 1.45 A that the SMILES says is broken). The thresholds are deliberately conservative, so borderline cases (such
+as a 1.69 A C-C contact) are not counted. The full list is in `results/rdb7_audit.csv`
+(`python scripts/audit_rdb7.py`). The same check runs on every uploaded reaction and shows a warning when it fires. We
+do not know whether these entries reflect the SMILES or the geometry being wrong; either way, a model trained or scored
+on them sees an inconsistent target.
+
 ### Does it generalise?
 
 All of these use predictions the GoFlow authors released; nothing was retrained.

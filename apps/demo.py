@@ -217,7 +217,9 @@ def _(EXAMPLES, charge, ex, mo, mult, np, rxn, t, title):
               'one guess: no disagreement signal' if np.isnan(t.disagreement) else f'model disagreement {t.disagreement:.3f} Å',
               f'charge {charge}, multiplicity {mult}']
     _note = (f"<p style='margin:10px 0 0;color:#33322e'>{EXAMPLES[ex]['note']}</p>" if ex else '')
-    mo.Html(
+    from tsso.audit import audit_reaction as _audit_reaction, describe as _describe
+    _warn = _describe(_audit_reaction(rxn))
+    _card = mo.Html(
         f"<div style='border:2px solid {_col[0]};border-radius:14px;padding:16px 18px;background:#fff;margin-top:6px'>"
         f"<div style='display:flex;gap:16px;align-items:center'>"
         f"<div style='flex:none;width:64px;height:64px;border-radius:14px;background:{_col[1]};color:{_col[0]};"
@@ -228,6 +230,9 @@ def _(EXAMPLES, charge, ex, mo, mult, np, rxn, t, title):
         f"<div style='display:flex;flex-wrap:wrap;gap:8px;margin-top:12px'>"
         + ''.join(f"<span style='background:#f1f0ec;border-radius:999px;padding:3px 10px;font-size:13px;color:#55534e'>{f}</span>" for f in _facts)
         + f"</div>{_note}</div>")
+    _box = mo.callout(mo.md('**Data check: the structures disagree with the SMILES.** ' + ' '.join(_warn)
+                            + ' The verdict above takes the SMILES at its word.'), kind='warn') if _warn else None
+    mo.vstack([_card, _box]) if _box else _card
     return
 
 
@@ -532,7 +537,11 @@ def _(ROOT, mo):
               "test reactions; rules were gated only on the 9,540 training reactions. The GoFlow paper notes that D-MAE "
               "misses chirality errors, and FK-Flow (Mark, Galustian, Kovar & Heid, 2025) measured them and fixed them by "
               "steering generation. TS Second Opinion works after generation, on any model's output, and adds repair, a "
-              "statistical guarantee and agent tools. Code: github.com/tammy357/ts-second-opinion (MIT).</span>")])
+              "statistical guarantee and agent tools. Code: github.com/tammy357/ts-second-opinion (MIT).</span>"),
+        mo.md('**Data audit.** The same check that warns about your uploads also audits datasets: in 51 of the 10,734 '
+              'RDB7 reactions used here (0.5%), the product geometry\'s bonding contradicts the product SMILES, for '
+              'example a hydrogen that sits on a different carbon. Reaction 1093 above is one of them. The full list: '
+              '`tsso audit`, or results/rdb7_audit.csv.')])
     return
 
 

@@ -1,6 +1,7 @@
 """A single-file HTML report card for one reaction: verdict, reasons, rule results, stereocentres, linked 3D views of
 the raw and recommended TS guesses, the recommended geometry and an ORCA input. Opens offline in any browser."""
 import datetime, html, json
+from .audit import audit_reaction, describe
 from pathlib import Path
 
 import numpy as np
@@ -68,7 +69,7 @@ def report_html(rxn, t, checks, charge=0, mult=1, title='Your reaction', score=N
         '__TITLE__': html.escape(title), '__SMILES__': html.escape(rxn.smiles), '__VERDICT__': t.verdict,
         '__ICON__': icon, '__WORD__': word, '__MEANING__': meaning,
         '__FACTS__': ''.join(f'<li>{html.escape(f)}</li>' for f in facts),
-        '__REASONS__': ''.join(f'<li>{html.escape(r)}</li>' for r in t.reasons),
+        '__REASONS__': ''.join(f'<li>{html.escape(r)}</li>' for r in t.reasons + ['Data check: ' + w for w in describe(audit_reaction(rxn))]),
         '__RULES__': ''.join(rule_rows), '__STEREO__': stereo_rows, '__SCORE__': score_html,
         '__RAWLABEL__': f'Best raw guess (guess {t.chosen_model + 1})',
         '__RECLABEL__': 'Recommended (mirror-repaired)' if t.mirrored else 'Recommended',

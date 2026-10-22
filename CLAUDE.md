@@ -3,8 +3,8 @@
 - Purpose: decide which machine-learned transition-state (TS) guesses to trust, repair or send to DFT.
 - MCP server: `tsso mcp` (configured in .mcp.json; needs `pip install -e .`). Tools: triage_structures (any reaction, any
   elements, from xyz text), evaluate_predictions (stereo-aware scoring), certify_trust, list_reactions, triage_reaction,
-  list_rules, get_rule_source, gate_check, save_rule, write_orca_input, benchmark_summary.
-- CLI equivalents: tsso check / evaluate / certify / triage / gate / author. Python: `from tsso import second_opinion`.
+  list_rules, get_rule_source, gate_check, save_rule, write_orca_input, benchmark_summary, audit_rdb7_dataset.
+- CLI equivalents: tsso check / evaluate / certify / triage / gate / author / audit. Python: `from tsso import second_opinion`.
 - Example inputs live in examples/. `tsso check ... --report r.html` writes a one-file HTML report card.
 - The app (apps/demo.py) is verdict-first: examples, upload, linked 3D views, Rule Studio replay, trust slider.
   It also runs in the browser (docs/app, built by scripts/build_wasm.py); there tsso/smiles_lite.py stands in for RDKit.

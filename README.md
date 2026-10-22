@@ -115,6 +115,10 @@ Handedness stays at 82–85% correct for every released GoFlow model size (64 to
 does not fix it. The full leaderboard is in [docs/RESULTS.md](docs/RESULTS.md#full-stereo-aware-leaderboard); to add a
 model, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
+**Data audit** (`tsso audit`): in 51 of the 10,734 RDB7 reactions used here (0.5%), the product geometry's bonding
+contradicts the product SMILES, for example a hydrogen sitting on a different carbon. The list is in
+[`results/rdb7_audit.csv`](results/rdb7_audit.csv); every uploaded reaction gets the same check.
+
 **Benchmark data** ([`benchmark/`](benchmark/README.md)): handedness labels for all 9,552 GoFlow guesses on the 1,194 RDB7
 test reactions, plus a mirror-image unit test for TS metrics (447 mirrored reference TSs that a handedness-blind metric
 scores as perfect).
@@ -157,7 +161,7 @@ TS guesses ──► run every accepted check ──► consensus among passing 
 
 ```bash
 pip install -e ".[dev]"
-python -m pytest -q tests                # 20 tests
+python -m pytest -q tests                # 22 tests
 python scripts/evaluate.py               # -> results/metrics.json
 python scripts/triage_all.py 0.2         # verdicts for all 1,194 reactions -> results/triage.csv
 python scripts/benchmark.py              # mirror blindness, handedness split, risk-coverage -> results/benchmark.json
@@ -165,6 +169,7 @@ python scripts/certify.py                # certified trust -> results/certify.js
 python scripts/leaderboard.py            # stereo-aware leaderboard -> results/leaderboard.md
 python scripts/ablation_authors.py       # Claude-written vs directly written checks -> results/ablation_authors.json
 python scripts/build_benchmark.py        # benchmark/ data files
+python scripts/audit_rdb7.py             # RDB7 data audit -> results/rdb7_audit.csv
 python scripts/build_site.py             # the static showcase in docs/ (GitHub Pages)
 python scripts/build_wasm.py             # the in-browser app in docs/app/
 ```

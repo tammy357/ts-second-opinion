@@ -78,6 +78,14 @@ def write_orca_input(reaction_id: int) -> dict:
 
 
 @mcp.tool()
+def audit_rdb7_dataset() -> dict:
+    """Data-quality audit of RDB7: reactions whose reactant or product geometry contradicts the atom-mapped SMILES
+    (atoms at single-bond distance that the SMILES does not bond, or a SMILES bond whose atoms are far apart).
+    Uploaded reactions get the same check automatically (input_warnings in triage_structures)."""
+    return service.audit_rdb7(limit=60)
+
+
+@mcp.tool()
 def evaluate_predictions(predictions_xyz: str, references_xyz: str, reaction_smiles: list[str], order: str = 'map') -> dict:
     """Stereo-aware evaluation of any TS generator: multi-frame xyz text of predictions and of reference TSs (one
     frame per reaction, same order) plus the atom-mapped reaction SMILES. Returns D-MAE, RMSD with and without the

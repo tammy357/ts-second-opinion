@@ -29,3 +29,18 @@ def test_atom_count_line_must_match():
 
 def test_a_copy_of_the_reactant_or_product_is_not_trusted():
     assert verdict(R, P, [R]) == 'red' and verdict(R, P, [P]) == 'red'
+
+
+def test_audit_flags_smiles_geometry_contradictions():
+    from tsso.audit import audit_reaction
+    from tsso.data import load_reactions
+    by = {r.id: r for r in load_reactions()}
+    assert not audit_reaction(by[3509])
+    assert any(i['atoms'] == 'N5-O6' and i['side'] == 'product' for i in audit_reaction(by[1093]))
+
+
+def test_uploads_warn_when_the_product_geometry_contradicts_the_smiles():
+    from tsso.service import second_opinion
+    good = second_opinion(SMI, R, P, [G])
+    swapped = second_opinion(SMI, R, R, [G])          # the reactant geometry given as the product
+    assert good['input_warnings'] == [] and swapped['input_warnings']

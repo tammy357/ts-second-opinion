@@ -10,6 +10,7 @@ from .geometry import dmae
 from .sandbox import compile_check
 from .triage import load_checks, triage, write_xyz, ORCA_TEMPLATE, amber_cutoff_for_budget
 from .gate import GATE_PASS_RATE
+from .audit import audit_reaction, audit_dataset, describe
 
 ROOT = Path(__file__).resolve().parent.parent
 RESULTS = ROOT / 'results'
@@ -228,9 +229,23 @@ def second_opinion(mapped_reaction_smiles, reactant, product, guesses, order='ma
         out['report'] = write_report(report, r, t, checks, out['charge'], out['multiplicity'], title,
                                      out.get('score_against_reference'))
     out['n_guesses'] = len(r.preds)
+    out['input_warnings'] = describe(audit_reaction(r))
     out['note'] = ('The review cut-off was calibrated on GoFlow guesses for RDB7. For another generator, compare '
                    'disagreement values across your own batch, or calibrate with tsso.certify.')
     return out
+
+
+def audit_rdb7(limit=20):
+    """Where RDB7's atom-mapped SMILES and its own reactant/product geometries disagree (see tsso.audit)."""
+    from .data import load_reactions
+    test = audit_dataset(load_reactions())
+    train = audit_dataset(load_reactions(ROOT / 'data' / 'rdb7_train_reference.json.gz'))
+    rows = [{'split': s, 'reaction_id': rid, 'issues': iss} for s, part in (('test', test), ('train', train)) for rid, _, iss in part]
+    return {'reactions_checked': 10734, 'reactions_flagged': len(rows), 'flagged_test_ids': [rid for rid, _, _ in test],
+            'all_on_product_side': all(i['side'] == 'product' for r in rows for i in r['issues']),
+            'examples': rows[:limit],
+            'meaning': 'A flagged reaction has a structure whose bonding contradicts its atom-mapped SMILES (atoms at '
+                       'single-bond distance that the SMILES does not bond, or a SMILES bond with the atoms far apart).'}
 
 
 def triage_structures(mapped_reaction_smiles, reactant_xyz, product_xyz, guesses_xyz, order='map'):

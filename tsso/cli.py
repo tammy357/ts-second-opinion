@@ -32,6 +32,8 @@ def _print(obj, as_json):
         print(f"  recommended guess: model {obj['chosen_guess']}" + ('  (mirror-repaired)' if obj['mirror_repaired'] else ''))
         for line in obj['reasons']:
             print('  -', line)
+        for line in obj.get('input_warnings', []):
+            print('  ! data check:', line)
         if 'score_against_reference' in obj:
             s = obj['score_against_reference']
             print(f"  vs reference (evaluation only): D-MAE {s['dmae_A']} A, stereo {'correct' if s['stereo_correct'] else 'WRONG'}")
@@ -68,6 +70,7 @@ def main(argv=None):
     p.add_argument('--seed', type=int, default=0)
     p = sub.add_parser('orca'); p.add_argument('reaction_id', type=int)
     sub.add_parser('summary')
+    sub.add_parser('audit', help='where RDB7 SMILES and geometries disagree')
     sub.add_parser('mcp')
     a = ap.parse_args(argv)
     if a.cmd == 'mcp':
@@ -154,6 +157,17 @@ def main(argv=None):
     elif a.cmd == 'orca':
         res = service.write_orca_input(a.reaction_id)
         _print(res if a.json else {k: v for k, v in res.items() if k != 'orca_input'}, True)
+    elif a.cmd == 'audit':
+        res = service.audit_rdb7(limit=10 if not a.json else 1000)
+        if a.json:
+            _print(res, True)
+        else:
+            print(f"{res['reactions_flagged']} of {res['reactions_checked']} RDB7 reactions have a structure whose bonding "
+                  f"contradicts its atom-mapped SMILES{' (all in the product geometry)' if res['all_on_product_side'] else ''}.")
+            print('  test-set reactions:', ', '.join(map(str, res['flagged_test_ids'])))
+            for row in res['examples']:
+                i = row['issues'][0]
+                print(f"  {row['split']} {row['reaction_id']}: {i['side']} {i['atoms']} at {i['distance_A']:.2f} A: {i['kind']}")
     elif a.cmd == 'summary':
         _print(service.benchmark_summary()['headline'], True)
 
