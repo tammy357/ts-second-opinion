@@ -134,7 +134,9 @@ it exactly. Applied to single GoFlow guesses (9,552), it fixed the handedness of
 broke none, cutting wrong-handed single guesses from 3.3% to 2.8%. But 41 of the 49 already had a geometry error
 (D-MAE > 0.2 Å), and their mean D-MAE rose from 0.26 to 0.33 Å. In the 8-model pipeline only 5 final answers had a
 detectable wrong centre. Partly flipped guesses are usually broken in other ways too, so the verdict stays "re-generate",
-and the inversion is not part of the pipeline.
+and the inversion is not part of the pipeline. The app offers it as an experimental button on partly flipped
+guesses (`tsso/stereo_edit.py`), with the rules checking the result: on example 5877 the inverted centre comes out
+right but the edit creates a clash, so the verdict stays "re-generate".
 
 ### Data audit: where RDB7's SMILES and geometries disagree
 

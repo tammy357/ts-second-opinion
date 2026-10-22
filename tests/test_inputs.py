@@ -44,3 +44,29 @@ def test_uploads_warn_when_the_product_geometry_contradicts_the_smiles():
     good = second_opinion(SMI, R, P, [G])
     swapped = second_opinion(SMI, R, R, [G])          # the reactant geometry given as the product
     assert good['input_warnings'] == [] and swapped['input_warnings']
+
+
+def test_local_inversion_fixes_a_partly_flipped_guess_and_keeps_its_bonds():
+    import numpy as np
+    from tsso.data import load_reactions
+    from tsso.metrics import handedness_correct
+    from tsso.stereo_edit import edit_stereo
+    r = {x.id: x for x in load_reactions()}[5877]
+    t = triage(r, load_checks(), amber_cutoff())
+    assert not handedness_correct(r, t.xyz, r.ts_ref_xyz)
+    y, edited = edit_stereo(r, t.xyz)
+    assert edited == ['C2'] and handedness_correct(r, y, r.ts_ref_xyz)
+    for a, b in r.product_bonds:
+        if 1 in (a, b):
+            assert abs(np.linalg.norm(y[a] - y[b]) - np.linalg.norm(t.xyz[a] - t.xyz[b])) < 1e-9
+
+
+def test_mirror_test_tells_blind_metrics_from_seeing_ones():
+    from tsso.mirror_test import run_mirror_test, BUILT_IN, compile_metric, load_pairs
+    import pytest
+    pairs = load_pairs()
+    assert not run_mirror_test(BUILT_IN['dmae'], pairs)['sees_handedness']
+    assert not run_mirror_test(BUILT_IN['rmsd_mirror_allowed'], pairs)['sees_handedness']
+    assert run_mirror_test(BUILT_IN['rmsd_proper_rotations'], pairs)['sees_handedness']
+    with pytest.raises(ValueError):
+        compile_metric('import os\ndef metric(a, b):\n    return 0.0\n')

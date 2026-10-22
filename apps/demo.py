@@ -282,6 +282,44 @@ def _(checks, mo, run_check, rxn, stereocentre_status, t):
 
 
 @app.cell
+def _(mo, rxn, stereocentre_status, t):
+    _wrong = [_s['label'] for _s in stereocentre_status(rxn, t.xyz) if _s['ok'] is False]
+    flip_btn = mo.ui.run_button(label=f"Invert only {', '.join(_wrong) or 'the wrong centres'} (experimental)",
+                                disabled=not _wrong)
+    _ui = mo.vstack([
+        mo.md('### Partly flipped? Invert only the wrong centre (experimental)'),
+        mo.md(f"The recommended guess still has {', '.join(_wrong)} the wrong way round, and mirroring would break the "
+              'correct centres. This reflects just that centre and its smallest branch (usually one hydrogen) through '
+              'the plane of its other neighbours: the centre is inverted and every bond to it keeps its length. The '
+              'rules then check the result.'),
+        flip_btn]) if _wrong else mo.md('')
+    _ui
+    return (flip_btn,)
+
+
+@app.cell
+def _(checks, compare_html, flip_btn, mo, run_check, rxn, stereocentre_status, t):
+    mo.stop(not flip_btn.value)
+    from tsso.stereo_edit import edit_stereo as _edit_stereo
+    _y, _edited = _edit_stereo(rxn, t.xyz)
+    if _y is None:
+        mo.stop(True, mo.callout(mo.md('Every branch at this centre is part of a ring, so it cannot be inverted locally.'),
+                                 kind='warn'))
+    _failed = [(_n, _d) for _n, _fn in checks.items() for _ok, _d in [run_check(_fn, rxn, _y)] if _ok is False]
+    _names = ', '.join(_edited)
+    _msg = (f"**{_names} inverted: the edited guess passes every rule.** Still check it with DFT: in our tests on 9,552 "
+            'single GoFlow guesses, this fixed the handedness in 40 of 49 cases and never broke it, but 41 of those 49 '
+            'had other geometry errors too.' if not _failed else
+            f"**{_names} inverted, and {_names} now has the right handedness, but the edited guess breaks "
+            + ', '.join(f'"{_n}" ({_d})' for _n, _d in _failed)
+            + '.** Partly flipped guesses are usually wrong in other ways too (41 of 49 in our tests), so re-generate it.')
+    _html = compare_html(rxn, t.xyz, _y, stereocentre_status(rxn, t.xyz), stereocentre_status(rxn, _y),
+                         labels=('Recommended guess', f'{_names} inverted'))
+    mo.vstack([mo.callout(mo.md(_msg), kind='success' if not _failed else 'warn'), mo.iframe(_html, height='400px')])
+    return
+
+
+@app.cell
 def _(ORCA_TEMPLATE, charge, checks, dmae, ex, handedness_correct, mo, mult, report_html, rxn, t, title):
     _score = ({'dmae_A': dmae(t.xyz, rxn.ts_ref_xyz), 'stereo_correct': handedness_correct(rxn, t.xyz, rxn.ts_ref_xyz)}
               if ex else None)
@@ -594,9 +632,89 @@ def _(ROOT, eval_btn, eval_demo, eval_order, mo, pred_in, refs_in, rxns_in):
 
 
 @app.cell
+def _(mo):
+    _rows = [('GoFlow', 0.3320, 0.6111), ('MolGen', 0.2748, 0.6240), ('TSDiff', 0.4110, 0.5563), ('MEPIN', 0.3788, 0.3944),
+             ('React-OT', 0.3181, 0.3195), ('FragmentFlow', 0.2947, 0.2952), ('OA-ReactDiff', 0.2790, 0.2795),
+             ('ReCurveflow', 0.1423, 0.1430)]
+    _td = "style='padding:6px 8px;border-bottom:1px solid #e3e2de;text-align:{}'"
+    _body = ''.join(
+        f"<tr><td {_td.format('left')}>{_m}</td><td {_td.format('right')}>{_a:.2f}</td><td {_td.format('right')}>{_b:.2f}</td>"
+        f"<td {_td.format('left')}><div style='display:flex;align-items:center;gap:8px'><div style='height:10px;width:{max(2, 400 * (_b - _a)):.0f}px;"
+        f"background:{'#d93025' if _b - _a > 0.1 else '#9aa0a6'};border-radius:3px'></div><span>+{_b - _a:.2f} Å</span></div></td></tr>"
+        for _m, _a, _b in _rows)
+    _th = "style='padding:6px 8px;border-bottom:2px solid #e3e2de;color:#55534e;text-align:{}'"
+    mo.vstack([
+        mo.md('## 5 · Beyond one model and one dataset'),
+        mo.md('### The blind spot is field-wide'),
+        mo.md('On another dataset (Transition1x), an independent 2026 study compared eight TS generators with RMSD computed '
+              'two ways. Three get much worse once a guess may no longer be matched to its mirror image: their guesses '
+              'have handedness errors that the usual, mirror-allowing score hides. TS Second Opinion works on any of them.'),
+        mo.Html(f"<table style='width:100%;border-collapse:collapse;font-size:14px'><tr><th {_th.format('left')}>Generator</th>"
+                f"<th {_th.format('right')}>RMSD, mirror allowed (Å)</th><th {_th.format('right')}>Mirror not allowed (Å)</th>"
+                f"<th {_th.format('left')}>Hidden by the usual score</th></tr>{_body}</table>"),
+        mo.md("<span style='color:#55534e;font-size:12px'>Native split, means over five seeds, from Table 1 of "
+              "[ReCurveflow (Baek, Gim & Kang, arXiv:2608.20869, 2026)](https://arxiv.org/abs/2608.20869). Not our "
+              "measurements.</span>")])
+    return
+
+
+@app.cell
+def _(mo):
+    from tsso.mirror_test import TEMPLATE as _TEMPLATE
+    metric_pick = mo.ui.dropdown({'D-MAE (distance matrices)': 'dmae',
+                                  'RMSD, mirror allowed (ignore_chirality=True)': 'rmsd_mirror_allowed',
+                                  'RMSD, proper rotations only': 'rmsd_proper_rotations',
+                                  'My own metric (edit the code below)': 'custom'},
+                                 value='D-MAE (distance matrices)', label='Metric')
+    metric_code = mo.ui.code_editor(value=_TEMPLATE, language='python', min_height=120)
+    mirror_btn = mo.ui.run_button(label='Run the mirror test', kind='success')
+    mo.vstack([
+        mo.md('### Does your metric see handedness? The mirror test'),
+        mo.md('Each of the 447 RDB7 reference TSs with a stereocentre is scored against its own mirror image, which is the '
+              'TS of a different reaction. A metric that calls these pairs identical cannot see handedness errors. Pick a '
+              'metric, or write your own; it runs in your browser.'),
+        mo.hstack([metric_pick, mirror_btn], justify='start'),
+        mo.accordion({'My own metric': metric_code})])
+    return metric_code, metric_pick, mirror_btn
+
+
+@app.cell
+def _(metric_code, metric_pick, mirror_btn, mo):
+    mo.stop(not mirror_btn.value)
+    import html as _hm
+    from tsso.mirror_test import BUILT_IN as _BUILT_IN, compile_metric as _compile_metric, run_mirror_test as _run
+    try:
+        _fn = _compile_metric(metric_code.value) if metric_pick.value == 'custom' else _BUILT_IN[metric_pick.value]
+        _r = _run(_fn)
+    except Exception as _e:
+        mo.stop(True, mo.callout(mo.Html(f'<b>Could not run this metric.</b> {_hm.escape(str(_e))}'), kind='danger'))
+    _txt = (f"**Blind to handedness:** it scores {_r['scored_as_identical']} of {_r['n']} mirror images as identical "
+            f"(score below 0.01; median {_r['median_score']:.3f}). Report a handedness check alongside it (`tsso evaluate`)."
+            if not _r['sees_handedness'] else
+            f"**Sees handedness:** only {_r['scored_as_identical']} of {_r['n']} mirror images score as identical "
+            f"(median score {_r['median_score']:.2f}).")
+    mo.callout(mo.md(_txt), kind='warn' if not _r['sees_handedness'] else 'success')
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md("""### Also in this section of the project
+
+- **Data audit.** In 51 of the 10,734 RDB7 reactions used here (0.5%), the product geometry's bonding contradicts the
+  product SMILES (for example, a hydrogen on a different carbon). Example 1093 above is one; uploads get the same check.
+  The list: `tsso audit` or results/rdb7_audit.csv.
+- **Partial flips.** Inverting only the wrong centre (the experimental button above, on example 5877) fixed handedness in
+  40 of 49 single GoFlow guesses and broke none, but 41 of the 49 had other geometry errors, so the pipeline still says
+  re-generate.
+- **Score any generator** with the panel under the leaderboard, or `tsso evaluate`.""")
+    return
+
+
+@app.cell
 def _(ROOT, mo):
     mo.vstack([
-        mo.md('## 5 · Results'),
+        mo.md('## 6 · Results'),
         mo.hstack([mo.image((ROOT / 'results' / 'fig_final_answer.png').read_bytes(), width=470),
                    mo.image((ROOT / 'results' / 'fig_certify.png').read_bytes(), width=560)], widths='equal'),
         mo.image((ROOT / 'results' / 'fig_risk_coverage.png').read_bytes(), width=760),
@@ -604,11 +722,7 @@ def _(ROOT, mo):
               "test reactions; rules were gated only on the 9,540 training reactions. The GoFlow paper notes that D-MAE "
               "misses chirality errors, and FK-Flow (Mark, Galustian, Kovar & Heid, 2025) measured them and fixed them by "
               "steering generation. TS Second Opinion works after generation, on any model's output, and adds repair, a "
-              "statistical guarantee and agent tools. Code: github.com/tammy357/ts-second-opinion (MIT).</span>"),
-        mo.md('**Data audit.** The same check that warns about your uploads also audits datasets: in 51 of the 10,734 '
-              'RDB7 reactions used here (0.5%), the product geometry\'s bonding contradicts the product SMILES, for '
-              'example a hydrogen that sits on a different carbon. Reaction 1093 above is one of them. The full list: '
-              '`tsso audit`, or results/rdb7_audit.csv.')])
+              "statistical guarantee and agent tools. Code: github.com/tammy357/ts-second-opinion (MIT).</span>")])
     return
 
 

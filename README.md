@@ -118,6 +118,10 @@ Handedness stays at 82–85% correct for every released GoFlow model size (64 to
 does not fix it. The full leaderboard is in [docs/RESULTS.md](docs/RESULTS.md#full-stereo-aware-leaderboard); to add a
 model, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
+**Mirror test for metrics** (`tsso.mirror_test`, and in the app): scores each of 447 reference TSs against its own
+mirror image. D-MAE and RMSD with the mirror allowed call all 447 pairs identical; RMSD with proper rotations sees
+every one. Paste your own metric to test it.
+
 **Data audit** (`tsso audit`): in 51 of the 10,734 RDB7 reactions used here (0.5%), the product geometry's bonding
 contradicts the product SMILES, for example a hydrogen sitting on a different carbon. The list is in
 [`results/rdb7_audit.csv`](results/rdb7_audit.csv); every uploaded reaction gets the same check.
@@ -164,7 +168,7 @@ TS guesses ──► run every accepted check ──► consensus among passing 
 
 ```bash
 pip install -e ".[dev]"
-python -m pytest -q tests                # 22 tests
+python -m pytest -q tests                # 24 tests
 python scripts/evaluate.py               # -> results/metrics.json
 python scripts/triage_all.py 0.2         # verdicts for all 1,194 reactions -> results/triage.csv
 python scripts/benchmark.py              # mirror blindness, handedness split, risk-coverage -> results/benchmark.json
