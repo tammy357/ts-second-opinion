@@ -11,7 +11,7 @@ Works with any TS generator and any elements, from a web app, the command line, 
 
 > **Open Scientific Intelligence (OSI) Hackathon 2026** · Showcase page with the worked examples: open
 > [`docs/index.html`](docs/index.html) in a browser (no install)
-> · 2-minute video: *link to be added*
+> · Video (4 min): *link to be added*
 
 ![a near-perfect TS guess with the wrong handedness](results/fig_hero_mirror.png)
 
@@ -37,6 +37,17 @@ The rules repair handedness; they do not fix geometry errors (14.1% → 11.7%), 
 Full results, caveats and every number's source: **[docs/RESULTS.md](docs/RESULTS.md)**.
 
 ## Quickstart
+
+**Try the app with no clone and no install step** (needs [uv](https://docs.astral.sh/uv/); the app fetches its code and
+data from this repository on first start):
+
+```bash
+uvx marimo run --sandbox https://raw.githubusercontent.com/tammy357/ts-second-opinion/main/apps/demo.py
+```
+
+Or open it on marimo's free cloud: [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/tammy357/ts-second-opinion/blob/main/apps/demo.py)
+
+To install the library, CLI and MCP server:
 
 ```bash
 git clone https://github.com/tammy357/ts-second-opinion && cd ts-second-opinion
@@ -142,7 +153,7 @@ TS guesses ──► run every accepted check ──► consensus among passing 
 
 ```bash
 pip install -e ".[dev]"
-python -m pytest -q tests                # 12 tests
+python -m pytest -q tests                # 13 tests
 python scripts/evaluate.py               # -> results/metrics.json
 python scripts/triage_all.py 0.2         # verdicts for all 1,194 reactions -> results/triage.csv
 python scripts/benchmark.py              # mirror blindness, handedness split, risk-coverage -> results/benchmark.json
