@@ -152,10 +152,10 @@ TS guesses ──► run every accepted check ──► consensus among passing 
 
 | Criterion | |
 |---|---|
-| **Impact** | Catches a class of TS errors that distance scores and DFT frequency checks miss, and says where DFT is worth spending. Anyone with a TS generator can use it today. |
-| **Innovativeness** | LLM-written chemistry checks that must pass a data gate; repair of mirror-image guesses after generation; a conformal guarantee on which guesses to trust; a stereo-aware benchmark. |
-| **Scalability** | Any generator, any elements, CPU only, a fraction of a second per reaction. CLI, Python and MCP. New rules are added in plain English through the same gate. |
-| **Relevance** | Transition states are a bottleneck for reaction networks, catalysis and kinetics. TS-model papers can report handedness with one command. |
+| **Potential for impact** | Clear users, usable today in a browser: chemists deciding which ML transition states to send to DFT (check, repair, trust at a stated error rate); TS-model developers, who get a stereo-aware score in one click or `tsso evaluate`; and TS-dataset curators (`tsso audit`). |
+| **Innovativeness** | The obvious fixes are retraining or steering one model, or a DFT frequency check, which a mirror image passes. Instead, a model-agnostic second-opinion layer: chemists' rules in plain English become Claude-written code that must pass a data gate, a reflection repairs whole-mirror errors at no cost, and conformal selection states the error rate. |
+| **Novelty** | Post-hoc handedness checking and repair for any generator; a stereo-aware leaderboard and a mirror-image unit test for TS metrics; an audit that found 51 RDB7 reactions whose product geometry contradicts its SMILES. Open avenues: other generators and datasets, and the gated rules as steering potentials during generation. |
+| **Relevance** | A specific problem in chemistry: transition states gate kinetics, catalysis and reaction-network studies, and every wrong guess sent to DFT costs hours. |
 
 ## Reproduce every number
 
