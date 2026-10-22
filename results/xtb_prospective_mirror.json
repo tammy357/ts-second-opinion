@@ -1,0 +1,762 @@
+[
+ {
+  "reaction_id": 239,
+  "unrepaired": {
+   "converged": true,
+   "energy_kcal": -10213.327899645037,
+   "n_imaginary": 1,
+   "imaginary_cm1": 562.657221307251,
+   "handedness_correct": false,
+   "dmae_to_dft_ts_A": 0.0179
+  },
+  "repaired": {
+   "converged": true,
+   "energy_kcal": -10213.327899645024,
+   "n_imaginary": 1,
+   "imaginary_cm1": 562.1482618391732,
+   "handedness_correct": true,
+   "dmae_to_dft_ts_A": 0.0179
+  }
+ },
+ {
+  "reaction_id": 469,
+  "unrepaired": {
+   "converged": true,
+   "energy_kcal": -11873.330941536522,
+   "n_imaginary": 1,
+   "imaginary_cm1": 670.0971366868695,
+   "handedness_correct": false,
+   "dmae_to_dft_ts_A": 0.0677
+  },
+  "repaired": {
+   "converged": true,
+   "energy_kcal": -11873.330941531123,
+   "n_imaginary": 1,
+   "imaginary_cm1": 669.5324147414899,
+   "handedness_correct": true,
+   "dmae_to_dft_ts_A": 0.0677
+  }
+ },
+ {
+  "reaction_id": 609,
+  "unrepaired": {
+   "converged": true,
+   "energy_kcal": -11041.246787442604,
+   "n_imaginary": 1,
+   "imaginary_cm1": 895.5724809688151,
+   "handedness_correct": false,
+   "dmae_to_dft_ts_A": 0.0208
+  },
+  "repaired": {
+   "converged": true,
+   "energy_kcal": -11041.246787442613,
+   "n_imaginary": 1,
+   "imaginary_cm1": 896.5458744815503,
+   "handedness_correct": true,
+   "dmae_to_dft_ts_A": 0.0208
+  }
+ },
+ {
+  "reaction_id": 851,
+  "unrepaired": {
+   "converged": true,
+   "energy_kcal": -11756.340594999056,
+   "n_imaginary": 1,
+   "imaginary_cm1": 933.2685068542486,
+   "handedness_correct": false,
+   "dmae_to_dft_ts_A": 0.041
+  },
+  "repaired": {
+   "converged": true,
+   "energy_kcal": -11756.340594999056,
+   "n_imaginary": 1,
+   "imaginary_cm1": 933.2984254086006,
+   "handedness_correct": true,
+   "dmae_to_dft_ts_A": 0.041
+  }
+ },
+ {
+  "reaction_id": 940,
+  "unrepaired": {
+   "converged": true,
+   "energy_kcal": -12295.025664607272,
+   "n_imaginary": 1,
+   "imaginary_cm1": 519.4640999489103,
+   "handedness_correct": false,
+   "dmae_to_dft_ts_A": 0.0335
+  },
+  "repaired": {
+   "converged": true,
+   "energy_kcal": -12295.025664607263,
+   "n_imaginary": 1,
+   "imaginary_cm1": 520.4826991839292,
+   "handedness_correct": true,
+   "dmae_to_dft_ts_A": 0.0335
+  }
+ },
+ {
+  "reaction_id": 1049,
+  "unrepaired": {
+   "converged": true,
+   "energy_kcal": -12253.661331485951,
+   "n_imaginary": 1,
+   "imaginary_cm1": 827.6324754526346,
+   "handedness_correct": false,
+   "dmae_to_dft_ts_A": 0.0279
+  },
+  "repaired": {
+   "converged": true,
+   "energy_kcal": -12253.661331485953,
+   "n_imaginary": 1,
+   "imaginary_cm1": 827.4792060720044,
+   "handedness_correct": true,
+   "dmae_to_dft_ts_A": 0.0279
+  }
+ },
+ {
+  "reaction_id": 1416,
+  "unrepaired": {
+   "converged": true,
+   "energy_kcal": -12324.502405462423,
+   "n_imaginary": 1,
+   "imaginary_cm1": 960.7317371532214,
+   "handedness_correct": false,
+   "dmae_to_dft_ts_A": 0.139
+  },
+  "repaired": {
+   "converged": true,
+   "energy_kcal": -12324.502405462428,
+   "n_imaginary": 1,
+   "imaginary_cm1": 959.2856851273601,
+   "handedness_correct": true,
+   "dmae_to_dft_ts_A": 0.139
+  }
+ },
+ {
+  "reaction_id": 1496,
+  "unrepaired": {
+   "converged": true,
+   "energy_kcal": -11110.687568514197,
+   "n_imaginary": 1,
+   "imaginary_cm1": 566.4475884952357,
+   "handedness_correct": false,
+   "dmae_to_dft_ts_A": 0.0631
+  },
+  "repaired": {
+   "converged": true,
+   "energy_kcal": -11110.687568517415,
+   "n_imaginary": 1,
+   "imaginary_cm1": 566.0820706388446,
+   "handedness_correct": true,
+   "dmae_to_dft_ts_A": 0.0631
+  }
+ },
+ {
+  "reaction_id": 1506,
+  "unrepaired": {
+   "converged": true,
+   "energy_kcal": -11162.769320335743,
+   "n_imaginary": 1,
+   "imaginary_cm1": 380.15669910443444,
+   "handedness_correct": false,
+   "dmae_to_dft_ts_A": 0.0307
+  },
+  "repaired": {
+   "converged": true,
+   "energy_kcal": -11162.769334540371,
+   "n_imaginary": 1,
+   "imaginary_cm1": 380.34605173158036,
+   "handedness_correct": true,
+   "dmae_to_dft_ts_A": 0.0307
+  }
+ },
+ {
+  "reaction_id": 1591,
+  "unrepaired": {
+   "converged": true,
+   "energy_kcal": -11313.707812799177,
+   "n_imaginary": 2,
+   "imaginary_cm1": 1800.5234172043047,
+   "handedness_correct": false,
+   "dmae_to_dft_ts_A": 0.0641
+  },
+  "repaired": {
+   "converged": true,
+   "energy_kcal": -11313.7078127992,
+   "n_imaginary": 2,
+   "imaginary_cm1": 1800.8479518955248,
+   "handedness_correct": true,
+   "dmae_to_dft_ts_A": 0.0641
+  }
+ },
+ {
+  "reaction_id": 2068,
+  "unrepaired": {
+   "converged": true,
+   "energy_kcal": -11261.091268653234,
+   "n_imaginary": 2,
+   "imaginary_cm1": 730.2476464953639,
+   "handedness_correct": false,
+   "dmae_to_dft_ts_A": 0.0771
+  },
+  "repaired": {
+   "converged": true,
+   "energy_kcal": -11261.09126865322,
+   "n_imaginary": 2,
+   "imaginary_cm1": 729.8653523194388,
+   "handedness_correct": true,
+   "dmae_to_dft_ts_A": 0.0771
+  }
+ },
+ {
+  "reaction_id": 2738,
+  "unrepaired": {
+   "converged": true,
+   "energy_kcal": -10520.782709083242,
+   "n_imaginary": 1,
+   "imaginary_cm1": 574.2364452832428,
+   "handedness_correct": false,
+   "dmae_to_dft_ts_A": 0.0145
+  },
+  "repaired": {
+   "converged": true,
+   "energy_kcal": -10520.782709047537,
+   "n_imaginary": 1,
+   "imaginary_cm1": 574.3516702817152,
+   "handedness_correct": true,
+   "dmae_to_dft_ts_A": 0.0145
+  }
+ },
+ {
+  "reaction_id": 2959,
+  "unrepaired": {
+   "converged": true,
+   "energy_kcal": -12938.127973965315,
+   "n_imaginary": 1,
+   "imaginary_cm1": 2104.350033261068,
+   "handedness_correct": false,
+   "dmae_to_dft_ts_A": 0.0899
+  },
+  "repaired": {
+   "converged": true,
+   "energy_kcal": -12938.127973965295,
+   "n_imaginary": 1,
+   "imaginary_cm1": 2103.7148574218922,
+   "handedness_correct": true,
+   "dmae_to_dft_ts_A": 0.0899
+  }
+ },
+ {
+  "reaction_id": 3167,
+  "unrepaired": {
+   "converged": true,
+   "energy_kcal": -10159.935592075482,
+   "n_imaginary": 1,
+   "imaginary_cm1": 397.0582139769007,
+   "handedness_correct": false,
+   "dmae_to_dft_ts_A": 0.102
+  },
+  "repaired": {
+   "converged": true,
+   "energy_kcal": -10159.938557230462,
+   "n_imaginary": 1,
+   "imaginary_cm1": 401.17476530606433,
+   "handedness_correct": true,
+   "dmae_to_dft_ts_A": 0.1011
+  }
+ },
+ {
+  "reaction_id": 3411,
+  "unrepaired": {
+   "converged": false,
+   "energy_kcal": -11808.23052366715,
+   "n_imaginary": 0,
+   "imaginary_cm1": 0.0,
+   "handedness_correct": false,
+   "dmae_to_dft_ts_A": 0.3062
+  },
+  "repaired": {
+   "converged": false,
+   "energy_kcal": -11808.290233864092,
+   "n_imaginary": 1,
+   "imaginary_cm1": 35.608437718279475,
+   "handedness_correct": true,
+   "dmae_to_dft_ts_A": 0.2986
+  }
+ },
+ {
+  "reaction_id": 3509,
+  "unrepaired": {
+   "converged": true,
+   "energy_kcal": -10493.511832782458,
+   "n_imaginary": 1,
+   "imaginary_cm1": 607.504976145821,
+   "handedness_correct": false,
+   "dmae_to_dft_ts_A": 0.0344
+  },
+  "repaired": {
+   "converged": true,
+   "energy_kcal": -10493.51139501364,
+   "n_imaginary": 1,
+   "imaginary_cm1": 606.8890220196563,
+   "handedness_correct": true,
+   "dmae_to_dft_ts_A": 0.0343
+  }
+ },
+ {
+  "reaction_id": 3589,
+  "unrepaired": {
+   "converged": true,
+   "energy_kcal": -11719.133631296523,
+   "n_imaginary": 1,
+   "imaginary_cm1": 431.24713902024433,
+   "handedness_correct": false,
+   "dmae_to_dft_ts_A": 0.0314
+  },
+  "repaired": {
+   "converged": true,
+   "energy_kcal": -11719.133631296523,
+   "n_imaginary": 1,
+   "imaginary_cm1": 432.5521938341919,
+   "handedness_correct": true,
+   "dmae_to_dft_ts_A": 0.0314
+  }
+ },
+ {
+  "reaction_id": 3613,
+  "unrepaired": {
+   "converged": true,
+   "energy_kcal": -11712.783531306593,
+   "n_imaginary": 1,
+   "imaginary_cm1": 457.56249612001426,
+   "handedness_correct": false,
+   "dmae_to_dft_ts_A": 0.0836
+  },
+  "repaired": {
+   "converged": true,
+   "energy_kcal": -11712.783531306606,
+   "n_imaginary": 1,
+   "imaginary_cm1": 457.78191136775143,
+   "handedness_correct": true,
+   "dmae_to_dft_ts_A": 0.0836
+  }
+ },
+ {
+  "reaction_id": 3654,
+  "unrepaired": {
+   "converged": true,
+   "energy_kcal": -11240.394869902697,
+   "n_imaginary": 1,
+   "imaginary_cm1": 453.9205675936597,
+   "handedness_correct": false,
+   "dmae_to_dft_ts_A": 0.1268
+  },
+  "repaired": {
+   "converged": true,
+   "energy_kcal": -11240.394870211945,
+   "n_imaginary": 1,
+   "imaginary_cm1": 453.9331473107131,
+   "handedness_correct": true,
+   "dmae_to_dft_ts_A": 0.1268
+  }
+ },
+ {
+  "reaction_id": 4165,
+  "unrepaired": {
+   "converged": true,
+   "energy_kcal": -11882.141207058374,
+   "n_imaginary": 1,
+   "imaginary_cm1": 855.9151900304641,
+   "handedness_correct": false,
+   "dmae_to_dft_ts_A": 0.0616
+  },
+  "repaired": {
+   "converged": true,
+   "energy_kcal": -11882.141207058376,
+   "n_imaginary": 1,
+   "imaginary_cm1": 855.8477074733381,
+   "handedness_correct": true,
+   "dmae_to_dft_ts_A": 0.0616
+  }
+ },
+ {
+  "reaction_id": 4223,
+  "unrepaired": {
+   "converged": true,
+   "energy_kcal": -11278.981716408249,
+   "n_imaginary": 1,
+   "imaginary_cm1": 300.9752373889396,
+   "handedness_correct": false,
+   "dmae_to_dft_ts_A": 0.1867
+  },
+  "repaired": {
+   "converged": true,
+   "energy_kcal": -11250.524428228142,
+   "n_imaginary": 1,
+   "imaginary_cm1": 584.699663533366,
+   "handedness_correct": true,
+   "dmae_to_dft_ts_A": 0.1601
+  }
+ },
+ {
+  "reaction_id": 4250,
+  "unrepaired": {
+   "converged": true,
+   "energy_kcal": -11054.756574105555,
+   "n_imaginary": 1,
+   "imaginary_cm1": 856.2277631439089,
+   "handedness_correct": false,
+   "dmae_to_dft_ts_A": 0.0306
+  },
+  "repaired": {
+   "converged": true,
+   "energy_kcal": -11054.756574105524,
+   "n_imaginary": 1,
+   "imaginary_cm1": 856.4496371810036,
+   "handedness_correct": true,
+   "dmae_to_dft_ts_A": 0.0306
+  }
+ },
+ {
+  "reaction_id": 5092,
+  "unrepaired": {
+   "converged": true,
+   "energy_kcal": -11234.50716042348,
+   "n_imaginary": 1,
+   "imaginary_cm1": 804.1090134554164,
+   "handedness_correct": false,
+   "dmae_to_dft_ts_A": 0.0254
+  },
+  "repaired": {
+   "converged": true,
+   "energy_kcal": -11234.522583323915,
+   "n_imaginary": 1,
+   "imaginary_cm1": 811.8922908045572,
+   "handedness_correct": true,
+   "dmae_to_dft_ts_A": 0.031
+  }
+ },
+ {
+  "reaction_id": 5347,
+  "unrepaired": {
+   "converged": true,
+   "energy_kcal": -11233.773678622802,
+   "n_imaginary": 1,
+   "imaginary_cm1": 644.6315303890832,
+   "handedness_correct": false,
+   "dmae_to_dft_ts_A": 0.0988
+  },
+  "repaired": {
+   "converged": true,
+   "energy_kcal": -11233.77804006148,
+   "n_imaginary": 1,
+   "imaginary_cm1": 638.7146523674908,
+   "handedness_correct": true,
+   "dmae_to_dft_ts_A": 0.1005
+  }
+ },
+ {
+  "reaction_id": 5511,
+  "unrepaired": {
+   "converged": true,
+   "energy_kcal": -12933.428980369998,
+   "n_imaginary": 1,
+   "imaginary_cm1": 646.2273767717963,
+   "handedness_correct": false,
+   "dmae_to_dft_ts_A": 0.0221
+  },
+  "repaired": {
+   "converged": true,
+   "energy_kcal": -12933.428980370158,
+   "n_imaginary": 1,
+   "imaginary_cm1": 647.3432556679741,
+   "handedness_correct": true,
+   "dmae_to_dft_ts_A": 0.0221
+  }
+ },
+ {
+  "reaction_id": 5811,
+  "unrepaired": {
+   "converged": true,
+   "energy_kcal": -9700.1442363891,
+   "n_imaginary": 1,
+   "imaginary_cm1": 1125.8535443412188,
+   "handedness_correct": false,
+   "dmae_to_dft_ts_A": 0.0195
+  },
+  "repaired": {
+   "converged": true,
+   "energy_kcal": -9700.144236389107,
+   "n_imaginary": 1,
+   "imaginary_cm1": 1124.9945792179885,
+   "handedness_correct": true,
+   "dmae_to_dft_ts_A": 0.0195
+  }
+ },
+ {
+  "reaction_id": 5839,
+  "unrepaired": {
+   "converged": true,
+   "energy_kcal": -12041.739402355244,
+   "n_imaginary": 1,
+   "imaginary_cm1": 1216.7926954957136,
+   "handedness_correct": false,
+   "dmae_to_dft_ts_A": 0.1772
+  },
+  "repaired": {
+   "converged": true,
+   "energy_kcal": -12041.739404030894,
+   "n_imaginary": 1,
+   "imaginary_cm1": 1217.3216559682062,
+   "handedness_correct": true,
+   "dmae_to_dft_ts_A": 0.1772
+  }
+ },
+ {
+  "reaction_id": 6074,
+  "unrepaired": {
+   "converged": true,
+   "energy_kcal": -11050.256234551587,
+   "n_imaginary": 1,
+   "imaginary_cm1": 560.5912188494258,
+   "handedness_correct": false,
+   "dmae_to_dft_ts_A": 0.0556
+  },
+  "repaired": {
+   "converged": true,
+   "energy_kcal": -11050.256236761492,
+   "n_imaginary": 1,
+   "imaginary_cm1": 560.6133217856058,
+   "handedness_correct": true,
+   "dmae_to_dft_ts_A": 0.0556
+  }
+ },
+ {
+  "reaction_id": 6235,
+  "unrepaired": {
+   "converged": true,
+   "energy_kcal": -11290.380324853166,
+   "n_imaginary": 1,
+   "imaginary_cm1": 449.5689525490159,
+   "handedness_correct": false,
+   "dmae_to_dft_ts_A": 0.0985
+  },
+  "repaired": {
+   "converged": true,
+   "energy_kcal": -11290.38032485317,
+   "n_imaginary": 1,
+   "imaginary_cm1": 449.5542898193783,
+   "handedness_correct": true,
+   "dmae_to_dft_ts_A": 0.0985
+  }
+ },
+ {
+  "reaction_id": 6503,
+  "unrepaired": {
+   "converged": true,
+   "energy_kcal": -12392.460631856738,
+   "n_imaginary": 1,
+   "imaginary_cm1": 877.041771063017,
+   "handedness_correct": false,
+   "dmae_to_dft_ts_A": 0.0273
+  },
+  "repaired": {
+   "converged": true,
+   "energy_kcal": -12392.46077019435,
+   "n_imaginary": 1,
+   "imaginary_cm1": 876.0950228620136,
+   "handedness_correct": true,
+   "dmae_to_dft_ts_A": 0.0272
+  }
+ },
+ {
+  "reaction_id": 6565,
+  "unrepaired": {
+   "converged": true,
+   "energy_kcal": -13325.497522971787,
+   "n_imaginary": 1,
+   "imaginary_cm1": 1097.764773288478,
+   "handedness_correct": false,
+   "dmae_to_dft_ts_A": 0.0477
+  },
+  "repaired": {
+   "converged": true,
+   "energy_kcal": -13325.497522942227,
+   "n_imaginary": 1,
+   "imaginary_cm1": 1098.0308557762762,
+   "handedness_correct": true,
+   "dmae_to_dft_ts_A": 0.0477
+  }
+ },
+ {
+  "reaction_id": 6783,
+  "unrepaired": {
+   "converged": true,
+   "energy_kcal": -13786.58396171093,
+   "n_imaginary": 1,
+   "imaginary_cm1": 729.5960797109553,
+   "handedness_correct": false,
+   "dmae_to_dft_ts_A": 0.0249
+  },
+  "repaired": {
+   "converged": true,
+   "energy_kcal": -13786.58396171093,
+   "n_imaginary": 1,
+   "imaginary_cm1": 729.3670179373603,
+   "handedness_correct": true,
+   "dmae_to_dft_ts_A": 0.0249
+  }
+ },
+ {
+  "reaction_id": 6844,
+  "unrepaired": {
+   "converged": true,
+   "energy_kcal": -13417.671554099907,
+   "n_imaginary": 1,
+   "imaginary_cm1": 606.0173678346908,
+   "handedness_correct": false,
+   "dmae_to_dft_ts_A": 0.1563
+  },
+  "repaired": {
+   "converged": true,
+   "energy_kcal": -13417.671554099923,
+   "n_imaginary": 1,
+   "imaginary_cm1": 605.3626026904454,
+   "handedness_correct": true,
+   "dmae_to_dft_ts_A": 0.1563
+  }
+ },
+ {
+  "reaction_id": 6901,
+  "unrepaired": {
+   "converged": true,
+   "energy_kcal": -13731.432729760065,
+   "n_imaginary": 1,
+   "imaginary_cm1": 352.09114648314574,
+   "handedness_correct": false,
+   "dmae_to_dft_ts_A": 0.0217
+  },
+  "repaired": {
+   "converged": true,
+   "energy_kcal": -13731.432729759961,
+   "n_imaginary": 1,
+   "imaginary_cm1": 350.5649727298956,
+   "handedness_correct": true,
+   "dmae_to_dft_ts_A": 0.0217
+  }
+ },
+ {
+  "reaction_id": 7032,
+  "unrepaired": {
+   "converged": true,
+   "energy_kcal": -13713.09341583109,
+   "n_imaginary": 1,
+   "imaginary_cm1": 377.30037610306596,
+   "handedness_correct": false,
+   "dmae_to_dft_ts_A": 0.0316
+  },
+  "repaired": {
+   "converged": true,
+   "energy_kcal": -13713.09341583105,
+   "n_imaginary": 1,
+   "imaginary_cm1": 380.83311566598053,
+   "handedness_correct": true,
+   "dmae_to_dft_ts_A": 0.0316
+  }
+ },
+ {
+  "reaction_id": 7382,
+  "unrepaired": {
+   "converged": true,
+   "energy_kcal": -13258.029909418847,
+   "n_imaginary": 1,
+   "imaginary_cm1": 468.94146600618484,
+   "handedness_correct": false,
+   "dmae_to_dft_ts_A": 0.0334
+  },
+  "repaired": {
+   "converged": true,
+   "energy_kcal": -13258.02990941883,
+   "n_imaginary": 1,
+   "imaginary_cm1": 469.2907160193824,
+   "handedness_correct": true,
+   "dmae_to_dft_ts_A": 0.0334
+  }
+ },
+ {
+  "reaction_id": 7637,
+  "unrepaired": {
+   "converged": true,
+   "energy_kcal": -12647.39193026619,
+   "n_imaginary": 1,
+   "imaginary_cm1": 756.7354139601612,
+   "handedness_correct": false,
+   "dmae_to_dft_ts_A": 0.0232
+  },
+  "repaired": {
+   "converged": true,
+   "energy_kcal": -12647.391930266154,
+   "n_imaginary": 1,
+   "imaginary_cm1": 756.4060287415801,
+   "handedness_correct": true,
+   "dmae_to_dft_ts_A": 0.0232
+  }
+ },
+ {
+  "reaction_id": 7705,
+  "unrepaired": {
+   "converged": true,
+   "energy_kcal": -14326.173764015948,
+   "n_imaginary": 1,
+   "imaginary_cm1": 2225.945704886941,
+   "handedness_correct": false,
+   "dmae_to_dft_ts_A": 0.1331
+  },
+  "repaired": {
+   "converged": true,
+   "energy_kcal": -14326.173764015959,
+   "n_imaginary": 1,
+   "imaginary_cm1": 2224.303967157676,
+   "handedness_correct": true,
+   "dmae_to_dft_ts_A": 0.1331
+  }
+ },
+ {
+  "reaction_id": 8390,
+  "unrepaired": {
+   "converged": false,
+   "energy_kcal": -12488.44846868952,
+   "n_imaginary": 1,
+   "imaginary_cm1": 347.19247851317925,
+   "handedness_correct": false,
+   "dmae_to_dft_ts_A": 0.0225
+  },
+  "repaired": {
+   "converged": false,
+   "energy_kcal": -12488.131604357337,
+   "n_imaginary": 0,
+   "imaginary_cm1": 0.0,
+   "handedness_correct": true,
+   "dmae_to_dft_ts_A": 0.0368
+  }
+ },
+ {
+  "reaction_id": 8430,
+  "unrepaired": {
+   "converged": true,
+   "energy_kcal": -13083.998643259716,
+   "n_imaginary": 1,
+   "imaginary_cm1": 1089.7333447427377,
+   "handedness_correct": false,
+   "dmae_to_dft_ts_A": 0.0224
+  },
+  "repaired": {
+   "converged": true,
+   "energy_kcal": -13083.998645579251,
+   "n_imaginary": 1,
+   "imaginary_cm1": 1089.666684514061,
+   "handedness_correct": true,
+   "dmae_to_dft_ts_A": 0.0224
+  }
+ }
+]

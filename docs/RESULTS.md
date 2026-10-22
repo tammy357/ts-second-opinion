@@ -118,6 +118,35 @@ We did not find prior work applying conformal selection to machine-learned TS gu
 methods have been used for generative molecular design ([ConfHit](https://arxiv.org/abs/2603.07371),
 [SCoRE](https://arxiv.org/abs/2603.24704)).
 
+### New calculations: optimising the guesses with GFN2-xTB
+
+Everything above is retrospective. To test the two central claims with new calculations, we optimised TS guesses to
+saddle points with GFN2-xTB (tblite) and Sella (order 1, internal coordinates, fmax 0.03 eV/Å, at most 400 steps), then
+computed numerical frequencies (`scripts/xtb_prospective.py`; results in `results/xtb_prospective_*.json`). GFN2-xTB is
+a semi-empirical level, not DFT, and the reference TSs are DFT, so these are supporting evidence, not a DFT validation.
+
+**A mirror image passes a frequency check.** For the first 40 test reactions (by id) whose best guess was mirror-repaired,
+we optimised both the unrepaired and the repaired guess. In 34 of 40, both reached a first-order saddle point (one
+imaginary frequency) with the same energy (within 0.01 kcal/mol) and the same imaginary frequency (within 6 cm⁻¹). After
+optimisation, the unrepaired guess had the wrong handedness in 40 of 40 and the repaired guess the right one in 40 of 40.
+In the other 6, at least one optimisation stopped before converging or the two found different saddle points. So the
+symmetry argument holds in practice: an optimiser and a frequency check accept the mirror image, and only a stereo check
+catches it.
+
+**The verdicts hold after optimisation.** For the first 30 reactions (by id) of each verdict (all 6 for re-generate;
+mirror-repaired reactions excluded, as they are covered above), we optimised the recommended guess. A guess "found the
+reference TS" if it reached a first-order saddle point within 0.2 Å (D-MAE) of the DFT TS with the right handedness.
+
+| Verdict | Found the reference TS | First-order saddle point | Median D-MAE to the DFT TS |
+|---|---|---|---|
+| ✓ trust | 23 of 30 (77%) | 28 of 30 | 0.07 Å |
+| ! check with DFT | 18 of 30 (60%) | 29 of 30 | 0.18 Å |
+| ✕ re-generate | 0 of 6 (0%) | 5 of 6 | 0.32 Å |
+
+Five of the six "re-generate" guesses still optimised to a saddle point with one imaginary frequency, so a frequency check
+would have accepted them, but none was the reference TS and five had the wrong handedness. The samples are small and
+deterministic (first by id), not random.
+
 ### Is it only GoFlow?
 
 No. On Transition1x, a different dataset, the ReCurveflow study (Baek, Gim & Kang, arXiv:2608.20869, 2026; their Table 1,

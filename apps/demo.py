@@ -645,6 +645,22 @@ def _(mo):
     _th = "style='padding:6px 8px;border-bottom:2px solid #e3e2de;color:#55534e;text-align:{}'"
     mo.vstack([
         mo.md('## 5 · Beyond one model and one dataset'),
+        mo.md('### How it differs from what exists'),
+        mo.Html("<table style='width:100%;border-collapse:collapse;font-size:13px'>"
+                + "<tr>" + ''.join(f"<th style='text-align:{'left' if _k == 0 else 'center'};padding:6px 8px;border-bottom:2px solid #e3e2de;color:#55534e'>{_h}</th>"
+                                   for _k, _h in enumerate(['', 'Sees a wrong-handed TS?', 'Any generator\'s existing output?', 'Repairs it?',
+                                                            'Says what to trust, at a stated error rate?', 'Audits data and metrics?'])) + "</tr>"
+                + ''.join("<tr" + (" style='background:#f3f8f4;font-weight:600'" if _row[0].startswith('TS Second') else '') + ">"
+                          + ''.join(f"<td style='text-align:{'left' if _k == 0 else 'center'};padding:6px 8px;border-bottom:1px solid #e3e2de'>{_c}</td>"
+                                    for _k, _c in enumerate(_row)) + "</tr>"
+                          for _row in [('Usual scores (D-MAE, RMSD with the mirror allowed)', '✕', '✓', '✕', '✕', '✕'),
+                                       ('DFT frequency check', '✕ (a mirror image passes)', '✓', '✕', '✕', '✕'),
+                                       ('FK-Flow: steers GoFlow while it generates', '✓', '✕ (inside one model)', 'prevents', '—', '—'),
+                                       ('RitS: stereo-aware generator (2026)', '✓', '✕ (its own model)', 'prevents', '—', '—'),
+                                       ('TS Second Opinion', '✓', '✓', '✓ (whole mirror images)', '✓ (conformal selection)', '✓')])
+                + "</table>"),
+        mo.md("<span style='color:#55534e;font-size:12px'>Complementary, not competing: a stereo-aware generator makes fewer "
+              "errors, and TS Second Opinion catches what any generator still gets wrong, before DFT is spent.</span>"),
         mo.md('### The blind spot is field-wide'),
         mo.md('On another dataset (Transition1x), an independent 2026 study compared eight TS generators with RMSD computed '
               'two ways. Three get much worse once a guess may no longer be matched to its mirror image: their guesses '
@@ -694,6 +710,33 @@ def _(metric_code, metric_pick, mirror_btn, mo):
             f"**Sees handedness:** only {_r['scored_as_identical']} of {_r['n']} mirror images score as identical "
             f"(median score {_r['median_score']:.2f}).")
     mo.callout(mo.md(_txt), kind='warn' if not _r['sees_handedness'] else 'success')
+    return
+
+
+@app.cell
+def _(mo):
+    _rows = [('✓ trust', '23 of 30 (77%)', '28 of 30', '0.07 Å'), ('! check with DFT', '18 of 30 (60%)', '29 of 30', '0.18 Å'),
+             ('✕ re-generate', '0 of 6 (0%)', '5 of 6', '0.32 Å')]
+    _td = "style='padding:6px 8px;border-bottom:1px solid #e3e2de;text-align:{}'"
+    _th = "style='padding:6px 8px;border-bottom:2px solid #e3e2de;color:#55534e;text-align:{}'"
+    mo.vstack([
+        mo.md('### New calculations: optimising the guesses with GFN2-xTB'),
+        mo.md('To go beyond retrospective numbers, we optimised guesses to transition states with GFN2-xTB (a semi-empirical '
+              'quantum-chemistry method, not DFT) and computed their frequencies.'),
+        mo.md('**A mirror image passes a frequency check.** In 34 of 40 mirror-repaired reactions, the unrepaired and the '
+              'repaired guess optimised to transition states with the same energy (within 0.01 kcal/mol) and the same '
+              'imaginary frequency (within 6 cm⁻¹). The unrepaired one kept the wrong handedness in all 40.'),
+        mo.md('**The verdicts hold after optimisation.** Share of recommended guesses that optimised to the reference TS '
+              '(one imaginary frequency, within 0.2 Å of the DFT TS, right handedness):'),
+        mo.Html(f"<table style='width:100%;border-collapse:collapse;font-size:14px'><tr><th {_th.format('left')}>Verdict</th>"
+                f"<th {_th.format('right')}>Found the reference TS</th><th {_th.format('right')}>First-order saddle point</th>"
+                f"<th {_th.format('right')}>Median D-MAE to the DFT TS</th></tr>"
+                + ''.join(f"<tr><td {_td.format('left')}>{_a}</td><td {_td.format('right')}><b>{_b}</b></td>"
+                          f"<td {_td.format('right')}>{_c}</td><td {_td.format('right')}>{_d}</td></tr>" for _a, _b, _c, _d in _rows)
+                + "</table>"),
+        mo.md("<span style='color:#55534e;font-size:12px'>Five of the six re-generate guesses still reached a saddle point "
+              "with one imaginary frequency, so a frequency check would have accepted them; none was the reference TS. "
+              "First 30 reactions by id per verdict (all 6 re-generate); scripts/xtb_prospective.py.</span>")])
     return
 
 

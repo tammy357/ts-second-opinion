@@ -17,4 +17,5 @@
 - Claims: keep geometry errors (D-MAE > 0.2 A) and handedness errors (wrong stereo) separate. The rules fix handedness
   (17.7% -> 2.3%), not geometry (14.1% -> 11.7%). 90% of wrong-handed guesses are whole mirror images: same energy and
   frequencies, i.e. the TS of the mirror-image reaction. Certified trust (conformal selection) is an average guarantee
-  that assumes exchangeable data. Results are retrospective (no new DFT).
+  that assumes exchangeable data. Results are retrospective (no new DFT), plus new GFN2-xTB TS optimisations
+  (scripts/xtb_prospective.py): mirror pairs 34/40 identical saddles; found reference TS 77% / 60% / 0% by verdict.

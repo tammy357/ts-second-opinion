@@ -35,9 +35,36 @@ RMSD once mirror images are no longer allowed.
 | Geometry errors among guesses marked "trust" vs those sent to DFT | **4.4% vs 40%** |
 | Reactions you can trust at a guaranteed 5% average geometry-error rate (conformal selection) | **80%** |
 | "Success" (D-MAE ≤ 0.2 Å) that is also correctly handed: GoFlow → with TS Second Opinion | **71% → 86.5%** |
+| **New calculations** (GFN2-xTB TS optimisation): guesses that optimise to the reference TS, ✓ trust / ! check / ✕ re-generate | **77% / 60% / 0%** |
 
 The rules repair handedness; they do not fix geometry errors (14.1% → 11.7%), which are flagged for DFT instead.
+New GFN2-xTB transition-state optimisations (not DFT) also show that an unrepaired mirror image optimises to a saddle point
+with the same energy and imaginary frequency as the right TS, so a frequency check passes it: 34 of 40 reactions, and it
+kept the wrong handedness in all 40.
 Full results, caveats and every number's source: **[docs/RESULTS.md](docs/RESULTS.md)**.
+
+### How it differs from what exists
+
+| | Sees a wrong-handed TS? | Works on any generator's existing output? | Repairs it? | Says which guesses to trust, at a stated error rate? | Audits datasets and metrics? |
+|---|---|---|---|---|---|
+| Usual scores (D-MAE, RMSD with the mirror allowed) | ✕ | ✓ | ✕ | ✕ | ✕ |
+| DFT frequency check | ✕ (a mirror image passes) | ✓ | ✕ | ✕ | ✕ |
+| [FK-Flow](https://arxiv.org/abs/2509.01543): steers GoFlow while it generates | ✓ | ✕ (inside one model) | prevents | — | — |
+| [RitS](https://doi.org/10.26434/chemrxiv.15001681/v1): stereo-aware generator | ✓ | ✕ (its own model) | prevents | — | — |
+| **TS Second Opinion** | ✓ | ✓ | ✓ (whole mirror images) | ✓ (conformal selection) | ✓ (`tsso audit`, mirror test) |
+
+The approaches are complementary: a stereo-aware generator makes fewer errors, and TS Second Opinion catches what any
+generator still gets wrong, before DFT is spent.
+
+### Who can use it
+
+- **Anyone running ML transition-state models** (catalysis, combustion and atmospheric chemistry, process chemistry,
+  reaction-network exploration): check, repair and decide what to send to DFT.
+- **Anyone building or benchmarking a 3D generative model of chiral molecules**: the mirror test tells you in one click
+  whether your metric can see handedness, and `tsso evaluate` scores a model with and without it.
+- **Anyone building a reaction dataset**: `tsso audit` finds entries whose geometry contradicts their own SMILES.
+- **Anyone validating scientific ML outputs with LLMs**: rules written in plain English, turned into code by an LLM, and
+  kept only if they pass real reference data, is a pattern that carries over to other structure predictions.
 
 ## Quickstart
 
@@ -181,6 +208,7 @@ python scripts/leaderboard.py            # stereo-aware leaderboard -> results/l
 python scripts/ablation_authors.py       # Claude-written vs directly written checks -> results/ablation_authors.json
 python scripts/build_benchmark.py        # benchmark/ data files
 python scripts/audit_rdb7.py             # RDB7 data audit -> results/rdb7_audit.csv
+python scripts/xtb_prospective.py mirror 40; python scripts/xtb_prospective.py verdicts 30   # new xTB TS optimisations
 python scripts/build_site.py             # the static showcase in docs/ (GitHub Pages)
 python scripts/build_wasm.py             # the in-browser app in docs/app/
 ```
@@ -191,8 +219,9 @@ from a clone of the GoFlow repository.
 
 ## Limitations
 
-- **Retrospective.** No new DFT was run; "right" means close to RDB7's reference TS. Statements about what DFT would do
-  with a mirror-image guess follow from symmetry, not from new calculations.
+- **Mostly retrospective.** No new DFT was run; "right" means close to RDB7's reference TS. New GFN2-xTB transition-state
+  optimisations (106 reactions, `scripts/xtb_prospective.py`) confirm the mirror-image argument and the verdicts at a
+  semi-empirical level; DFT would be the next step.
 - **One dataset, one model family.** Small H/C/N/O molecules (RDB7) and GoFlow models. `tsso check` accepts any elements,
   but the rules were gated on RDB7: test them on your own reference TSs with `tsso gate` first.
 - **Mirror-image errors leave the barrier unchanged.** They matter whenever stereochemistry does; for barrier heights
