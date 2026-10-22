@@ -377,32 +377,72 @@ def _(authoring, mo, replay):
 def _(IN_BROWSER, available_backends, mo):
     new_rule = mo.ui.text_area(placeholder='e.g. Hydrogens that move between atoms sit roughly between them at the transition state.',
                                label='Try your own rule', full_width=True)
-    write_btn = mo.ui.run_button(label='Write and test it with Claude', disabled=IN_BROWSER)
+    api_key = mo.ui.text(kind='password', placeholder='sk-ant-...', label='Your Anthropic API key')
+    write_btn = mo.ui.run_button(label='Write and test it with Claude')
     _b = available_backends()
-    _note = ('In the browser version, writing new rules is switched off: run the repository locally with the Claude CLI '
-             'or an API key.' if IN_BROWSER else
-             f"LLM route: {_b[0]}{' (no Claude CLI or API key here: run the repository locally to write new rules)' if _b[0] == 'cache' else ''}"
-             '. Takes about 15–60 s.')
-    mo.vstack([new_rule, mo.hstack([write_btn, mo.md(f"<span style='color:#55534e;font-size:12px'>{_note}</span>")],
-                                   justify='start')])
-    return new_rule, write_btn
+    if IN_BROWSER:
+        _note = ('Uses your own Anthropic API key. It stays in this browser tab and is sent only to api.anthropic.com; '
+                 'nothing is stored. Each rule takes up to 3 Claude calls (a few cents). The 9,540 test structures (6 MB) '
+                 'download the first time. Takes about 30–90 s.')
+        _ui = mo.vstack([new_rule, api_key, write_btn, mo.md(f"<span style='color:#55534e;font-size:12px'>{_note}</span>")])
+    else:
+        _note = (f"LLM route: {_b[0]}{' (no Claude CLI or API key here: run the repository locally to write new rules)' if _b[0] == 'cache' else ''}"
+                 '. Takes about 15–60 s.')
+        _ui = mo.vstack([new_rule, mo.hstack([write_btn, mo.md(f"<span style='color:#55534e;font-size:12px'>{_note}</span>")],
+                                             justify='start')])
+    _ui
+    return api_key, new_rule, write_btn
 
 
 @app.cell
-def _(ROOT, mo, new_rule, write_btn):
+async def _(IN_BROWSER, ROOT, api_key, mo, new_rule, write_btn):
     mo.stop(not write_btn.value or not new_rule.value.strip())
-    from tsso.author import author
+    import html as _h
     import re as _re2
+    from tsso.author import author, author_async
     _name = 'user_' + _re2.sub(r'[^a-z0-9]+', '_', new_rule.value.lower()).strip('_')[:30]
-    with mo.status.spinner(title='Claude is writing the check; testing it on 9,540 real transition states...'):
-        _out = author(new_rule.value.strip(), name=_name, verbose=False, save_dir=ROOT / 'tsso' / 'checks_user')
+    _save = ROOT / 'tsso' / 'checks_user'
+
+    def _fail(msg):
+        mo.stop(True, mo.callout(mo.Html(f'<b>Could not write the rule.</b> {_h.escape(msg)}'), kind='danger'))
+
+    if IN_BROWSER:
+        if not api_key.value.strip():
+            _fail('Paste your Anthropic API key first (console.anthropic.com → API keys).')
+        from pyodide.http import pyfetch
+        from tsso.llm import ask_async
+        _train = ROOT / 'data' / 'rdb7_train_reference.json.gz'
+        if not _train.exists():
+            with mo.status.spinner(title='Downloading the 9,540 reference transition states (6 MB, first time only)...'):
+                _r = await pyfetch('https://raw.githubusercontent.com/tammy357/ts-second-opinion/main/data/rdb7_train_reference.json.gz')
+                if not _r.ok:
+                    _fail('Could not download the reference transition states from GitHub.')
+                _train.parent.mkdir(parents=True, exist_ok=True)
+                _train.write_bytes(await _r.bytes())
+        _key = api_key.value.strip()
+        try:
+            with mo.status.spinner(title='Claude is writing the check; testing it on 9,540 real transition states...') as _sp:
+                _out = await author_async(
+                    new_rule.value.strip(), lambda _p: ask_async(_p, _key, pyfetch), name=_name, save_dir=_save,
+                    on_attempt=lambda _a: _sp.update(subtitle=f"Attempt {_a['attempt']}: accepts {100 * _a['pass_rate']:.1f}% "
+                                                              f"of real TSs{'; kept' if _a['accepted'] else '; asking Claude to revise'}"))
+        except Exception as _e:
+            _fail(str(_e))
+    else:
+        with mo.status.spinner(title='Claude is writing the check; testing it on 9,540 real transition states...'):
+            _out = author(new_rule.value.strip(), name=_name, verbose=False, save_dir=_save)
     _s = _out['stats']
+    _steps = [mo.Html(f"<div style='border-left:4px solid {'#137333' if _a['accepted'] else '#b3261e'};padding:4px 12px'>"
+                      f"<b>Attempt {_a['attempt']}</b> · accepts {100 * _a['pass_rate']:.1f}% of real TSs (needs ≥ 99%) · catches "
+                      f"{100 * _a['rejects_mirror_images']:.1f}% of mirror images and {100 * _a['rejects_noisy_geometries']:.1f}% of "
+                      f"distorted TSs · <b>{'kept' if _a['accepted'] else 'rejected'}</b></div>")
+              for _a in _out.get('attempt_log', [])]
     mo.vstack([
         mo.md(f"**{'✓ Accepted' if _out['accepted'] else '✕ Rejected'}** after {_out['attempts']} attempt(s): accepts "
-              f"{100 * _s['pass_rate']:.1f}% of real TSs, catches {100 * _s['rejects_mirror_images']:.0f}% of mirror images "
-              f"and {100 * _s['rejects_noisy_geometries']:.0f}% of distorted ones."
-              + (' Saved to tsso/checks_user.' if _out['accepted'] else ' It is not used.')),
-        mo.accordion({'Code Claude wrote': mo.md(f"```python\n{_out['source']}\n```")})])
+              f"{100 * _s['pass_rate']:.1f}% of real TSs, catches {100 * _s['rejects_mirror_images']:.1f}% of mirror images "
+              f"and {100 * _s['rejects_noisy_geometries']:.1f}% of distorted ones."
+              + ('' if _out['accepted'] else ' The gate did its job: this rule is not used.'))]
+        + _steps + [mo.accordion({'Code Claude wrote': mo.md(f"```python\n{_out['source']}\n```")})])
     return
 
 

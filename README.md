@@ -42,7 +42,8 @@ Full results, caveats and every number's source: **[docs/RESULTS.md](docs/RESULT
 [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/tammy357/ts-second-opinion/blob/main/apps/demo.py/wasm).
 Both run the marimo app in your browser with WebAssembly (Pyodide), so uploaded files never leave your computer. In the
 browser, a small pure-Python SMILES reader stands in for RDKit; it gives identical results on every RDB7 reaction
-(`tests/test_smiles_lite.py`). Writing new rules with Claude needs a local install.
+(`tests/test_smiles_lite.py`). To write new rules with Claude in the browser, paste your own Anthropic API key;
+it is sent only to api.anthropic.com.
 
 Run the same app on your machine without cloning (needs [uv](https://docs.astral.sh/uv/)):
 

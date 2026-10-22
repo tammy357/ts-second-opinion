@@ -118,6 +118,32 @@ def author(rule, name=None, backend='auto', max_attempts=4, verbose=True, save_d
     return {'name': name, 'accepted': False, 'source': code, 'stats': stats, 'attempts': max_attempts, 'backend': used}
 
 
+async def author_async(rule, ask_fn, name=None, max_attempts=3, save_dir=CHECK_DIR, on_attempt=None):
+    """Same loop as author(), for callers whose LLM call is async (the in-browser app). ask_fn(prompt) -> (code, backend, model)."""
+    name = name or re.sub(r'[^a-z0-9]+', '_', rule.lower()).strip('_')[:40]
+    attempts, previous, fb = [], None, None
+    for attempt in range(1, max_attempts + 1):
+        code, used, model = await ask_fn(build_prompt(rule, fb, previous))
+        try:
+            stats = evaluate_source(code, train_set())
+        except Exception as e:
+            stats = {'pass_rate': 0.0, 'crash_rate': 1.0, 'failures': [(None, f'could not compile: {e}')], 'n_failures': 0,
+                     'rejects_mirror_images': 0, 'rejects_noisy_geometries': 0, 'accepted': False}
+        attempts.append({'attempt': attempt, 'pass_rate': stats['pass_rate'], 'crash_rate': stats['crash_rate'],
+                         'accepted': stats['accepted'], 'rejects_mirror_images': stats['rejects_mirror_images'],
+                         'rejects_noisy_geometries': stats['rejects_noisy_geometries'], 'code': code})
+        if on_attempt:
+            on_attempt(attempts[-1])
+        if stats['accepted']:
+            prov = {'backend': used, 'model': model, 'date': datetime.date.today().isoformat(), 'attempt': attempt}
+            path = save_check(name, rule, code, stats, prov, save_dir)
+            return {'name': name, 'accepted': True, 'source': path.read_text(), 'stats': stats, 'attempts': attempt,
+                    'attempt_log': attempts, 'backend': used, 'model': model}
+        previous, fb = code, feedback_text(stats)
+    return {'name': name, 'accepted': False, 'source': code, 'stats': stats, 'attempts': max_attempts,
+            'attempt_log': attempts, 'backend': used, 'model': model}
+
+
 def _log(rule, name, backend, model, attempts, accepted):
     LOG.parent.mkdir(exist_ok=True)
     with open(LOG, 'a') as fh:

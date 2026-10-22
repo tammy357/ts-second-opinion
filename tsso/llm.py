@@ -115,6 +115,32 @@ def ask(prompt, backend='auto', timeout=240):
     raise ValueError(f'unknown backend {backend}')
 
 
+API_URL = 'https://api.anthropic.com/v1/messages'
+
+
+def request_body(prompt, model=None):
+    return {'model': model or API_MODEL, 'max_tokens': 2000, 'system': SYSTEM, 'messages': [{'role': 'user', 'content': prompt}]}
+
+
+def request_headers(key):
+    # the last header lets a web page call the API directly; the key stays in the visitor's own browser
+    return {'x-api-key': key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json',
+            'anthropic-dangerous-direct-browser-access': 'true'}
+
+
+async def ask_async(prompt, key, fetch, model=None):
+    """Ask Claude over plain HTTPS with the caller's own API key (for the in-browser app, where fetch is
+    pyodide.http.pyfetch). Returns (code, backend_used, model_label)."""
+    import json
+    resp = await fetch(API_URL, method='POST', headers=request_headers(key), body=json.dumps(request_body(prompt, model)))
+    data = json.loads(await resp.string())
+    if not resp.ok:
+        msg = (data.get('error') or {}).get('message', str(data)[:200])
+        raise RuntimeError(f'the Anthropic API said: {msg}')
+    text = ''.join(b.get('text', '') for b in data.get('content', []))
+    return extract_code(text), 'api (browser)', data.get('model', model or API_MODEL)
+
+
 def normalise(rule):
     return re.sub(r'\s+', ' ', rule.strip().lower())
 
