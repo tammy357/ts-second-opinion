@@ -16,9 +16,9 @@
  ],
  "by_verdict": {
   "red": {
-   "n": 5,
+   "n": 6,
    "found_the_reference_ts": 0,
-   "first_order_saddle": 4
+   "first_order_saddle": 5
   },
   "green": {
    "n": 6,
@@ -69,6 +69,15 @@
    "converged": true,
    "n_imaginary": 1,
    "dmae_to_reference_ts_A": 0.2472,
+   "handedness_correct": false,
+   "found_the_reference_ts": false
+  },
+  {
+   "reaction_id": 3968,
+   "verdict": "red",
+   "converged": true,
+   "n_imaginary": 1,
+   "dmae_to_reference_ts_A": 0.2686,
    "handedness_correct": false,
    "found_the_reference_ts": false
   },

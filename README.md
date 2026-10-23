@@ -25,11 +25,11 @@ Works with any TS generator and any elements, from a web app, the command line, 
 - **What it found.** Catches **93%** of wrong-handed guesses (0.2% false alarms); wrong-handed answers **17.7% → 2.3%**;
   **80%** of reactions trusted at a guaranteed 5% error rate.
 - **New DFT confirms it.** ωB97X/def2-SVP transition-state optimisations: **6 of 6 trusted guesses** reached the
-  reference TS, **0 of 5 re-generate guesses** did (though 4 of them pass a DFT frequency check), and an unrepaired
+  reference TS, **0 of 6 re-generate guesses** did (though 5 of them pass a DFT frequency check), and an unrepaired
   mirror image is a true DFT saddle point **0.0006 kcal/mol** from the right one. GFN2-xTB on 106 more reactions agrees.
 - **Also new.** A data audit (51 RDB7 entries contradict their own SMILES), a mirror test for any TS metric, a
   stereo-aware leaderboard, and panels where anyone can drop in their own reactions, test sets and datasets.
-- **Limits.** The DFT sample is small (12 reactions, smaller basis than RDB7's); one dataset, RDB7 (tested on
+- **Limits.** The DFT sample is small (13 reactions, smaller basis than RDB7's); one dataset, RDB7 (tested on
   out-of-distribution splits); geometry errors are flagged for DFT, not fixed.
 
 ![a near-perfect TS guess with the wrong handedness](results/fig_hero_mirror.png)
@@ -54,7 +54,7 @@ RMSD once mirror images are no longer allowed.
 | Geometry errors among guesses marked "trust" vs those sent to DFT | **4.4% vs 40%** |
 | Reactions you can trust at a guaranteed 5% average geometry-error rate (conformal selection) | **80%** |
 | "Success" (D-MAE ≤ 0.2 Å) that is also correctly handed: GoFlow → with TS Second Opinion | **71% → 86.5%** |
-| **New DFT** (ωB97X/def2-SVP TS optimisation): guesses that reach the reference TS, ✓ trust / ✕ re-generate | **6 of 6 / 0 of 5** |
+| **New DFT** (ωB97X/def2-SVP TS optimisation): guesses that reach the reference TS, ✓ trust / ✕ re-generate | **6 of 6 / 0 of 6** |
 | **New GFN2-xTB** TS optimisation, same measure, ✓ trust / ! check / ✕ re-generate (106 reactions) | **77% / 60% / 0%** |
 
 The rules repair handedness; they do not fix geometry errors (14.1% → 11.7%), which are flagged for DFT instead (a quick
@@ -64,8 +64,8 @@ split) and on the barrier split, the rules still catch 90% and 89% of wrong-hand
 **New DFT calculations** test the central claims directly. Optimised with ωB97X/def2-SVP (the functional family of RDB7's references)
 and checked with analytic frequencies, the unrepaired mirror image of reaction 3509 is a first-order saddle point
 0.0006 kcal/mol and 2 cm⁻¹ from the repaired one, so a DFT frequency check passes it; only the stereo check sees it.
-Trusted guesses reached the reference TS; re-generate guesses did not, yet 4 of 5 still passed the frequency check
-(all 4 with the wrong handedness). GFN2-xTB on 106 more reactions agrees (mirror pairs identical in 34 of 40).
+Trusted guesses reached the reference TS; re-generate guesses did not, yet 5 of 6 still passed the frequency check
+(all 5 with the wrong handedness). GFN2-xTB on 106 more reactions agrees (mirror pairs identical in 34 of 40).
 
 ![new DFT calculations](results/fig_dft.png)
 
@@ -226,7 +226,7 @@ TS guesses ──► run every accepted check ──► consensus among passing 
 
 | Criterion | |
 |---|---|
-| **Potential for impact** | Clear users, usable today in a browser with their own data: chemists deciding which ML transition states to send to DFT (check, repair, trust at a stated error rate); TS-model developers, who get a stereo-aware score in one click; and dataset curators (audit your own dataset). New DFT confirms the verdicts: 6 of 6 trusted guesses reach the reference TS, 0 of 5 re-generate ones (GFN2-xTB on 106 reactions: 77% vs 0%). |
+| **Potential for impact** | Clear users, usable today in a browser with their own data: chemists deciding which ML transition states to send to DFT (check, repair, trust at a stated error rate); TS-model developers, who get a stereo-aware score in one click; and dataset curators (audit your own dataset). New DFT confirms the verdicts: 6 of 6 trusted guesses reach the reference TS, 0 of 6 re-generate ones (GFN2-xTB on 106 reactions: 77% vs 0%). |
 | **Innovativeness** | The obvious fixes are retraining or steering one model, or a DFT frequency check, which a mirror image passes. Instead, a model-agnostic second-opinion layer: chemists' rules in plain English become Claude-written code that must pass a data gate, a reflection repairs whole-mirror errors at no cost, and conformal selection states the error rate. |
 | **Novelty** | Post-hoc handedness checking and repair for any generator (prior work, FK-Flow and RitS, acts inside one model); a stereo-aware leaderboard and a mirror test for any TS metric; an audit that found 51 RDB7 reactions whose product geometry contradicts its SMILES. Open avenues: other generators and datasets, larger DFT validation, and the gated rules as steering potentials during generation. |
 | **Relevance** | A specific problem in chemistry: transition states gate kinetics, catalysis and reaction-network studies, and every wrong guess sent to DFT costs hours. |
@@ -258,7 +258,7 @@ from a clone of the GoFlow repository.
 ## Limitations
 
 - **Mostly retrospective, with a small DFT check.** The main numbers compare guesses with RDB7's reference TSs. New DFT
-  optimisations (12 reactions, ωB97X/def2-SVP, no dispersion, smaller basis than RDB7's ωB97X-D3/def2-TZVP; the
+  optimisations (13 reactions, ωB97X/def2-SVP, no dispersion, smaller basis than RDB7's ωB97X-D3/def2-TZVP; the
   first trusted reactions by id and the re-generate ones, not a random sample) and GFN2-xTB (106 reactions) confirm the mirror-image argument and the verdicts; a larger,
   random DFT sample is the next step.
 - **One dataset, one model family.** Small H/C/N/O molecules (RDB7) and GoFlow models, though tested on RDB7's

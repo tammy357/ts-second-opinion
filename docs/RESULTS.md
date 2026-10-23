@@ -1,6 +1,6 @@
 # Detailed results
 
-Everything behind the numbers in the [README](../README.md). The main results are retrospective: GoFlow's released predictions for the 1,194 RDB7 test reactions, with rules gated only on the 9,540 training reactions. New DFT transition-state optimisations (12 reactions) and GFN2-xTB ones (106 reactions) test the two central claims with new calculations; see [New DFT calculations](#new-calculations-optimising-the-guesses-with-dft) and [New xTB calculations](#new-calculations-optimising-the-guesses-with-gfn2-xtb). Every number is reproduced by the scripts listed in the README.
+Everything behind the numbers in the [README](../README.md). The main results are retrospective: GoFlow's released predictions for the 1,194 RDB7 test reactions, with rules gated only on the 9,540 training reactions. New DFT transition-state optimisations (13 reactions) and GFN2-xTB ones (106 reactions) test the two central claims with new calculations; see [New DFT calculations](#new-calculations-optimising-the-guesses-with-dft) and [New xTB calculations](#new-calculations-optimising-the-guesses-with-gfn2-xtb). Every number is reproduced by the scripts listed in the README.
 
 **Contents:** [Results on RDB7](#results-on-rdb7) · [New DFT calculations](#new-calculations-optimising-the-guesses-with-dft) · [New xTB calculations](#new-calculations-optimising-the-guesses-with-gfn2-xtb) · [Is it only GoFlow?](#is-it-only-goflow) · [Closest prior work](#closest-prior-work-found-with-valency-mcp-bond) · [Partial flips](#can-partial-flips-be-repaired) · [Data audit](#data-audit-where-rdb7s-smiles-and-geometries-disagree) · [Leaderboard](#full-stereo-aware-leaderboard) · [Limitations](#limitations-in-detail)
 
@@ -139,16 +139,16 @@ repaired one is the reference TS. At DFT level the two are indistinguishable by 
 a stereo check tells them apart.
 
 **The verdicts hold at DFT level.** We optimised the recommended guess for the first 6 ✓ trust reactions by id (not
-mirror-repaired; those are covered above) and for 5 ✕ re-generate reactions (all six in the test set have this verdict).
+mirror-repaired; those are covered above) and for all 6 ✕ re-generate reactions in the test set.
 
 | Verdict | Found the reference TS | First-order saddle point (passes a frequency check) | Wrong handedness after optimisation | Median D-MAE to the RDB7 TS |
 |---|---|---|---|---|
 | ✓ trust | 6 of 6 | 6 of 6 | 0 of 6 | 0.018 Å |
-| ✕ re-generate | 0 of 5 | 4 of 5 | 4 of 5 | 0.247 Å |
+| ✕ re-generate | 0 of 6 | 5 of 6 | 5 of 6 | 0.258 Å |
 
 Every trusted guess converged in 5–14 steps to the reference TS (D-MAE 0.009–0.026 Å). No re-generate guess
-did, yet 4 of the 5 still converged to a first-order saddle point, so a DFT frequency check would have accepted them.
-All of them kept a stereocentre the wrong way round: reaction 3923 (783i cm⁻¹, D-MAE 0.25 Å); reaction 5144 (587i cm⁻¹, D-MAE 0.31 Å); reaction 5877 (674i cm⁻¹, D-MAE 0.18 Å); reaction 8502 (490i cm⁻¹, D-MAE 0.21 Å). The rules flagged all of them before any DFT was spent. The ! check with DFT (amber) verdict was not
+did, yet 5 of the 6 still converged to a first-order saddle point, so a DFT frequency check would have accepted them.
+All of them kept a stereocentre the wrong way round: reaction 3923 (783i cm⁻¹, D-MAE 0.25 Å); reaction 3968 (609i cm⁻¹, D-MAE 0.27 Å); reaction 5144 (587i cm⁻¹, D-MAE 0.31 Å); reaction 5877 (674i cm⁻¹, D-MAE 0.18 Å); reaction 8502 (490i cm⁻¹, D-MAE 0.21 Å). The rules flagged all of them before any DFT was spent. The ! check with DFT (amber) verdict was not
 sampled here; GFN2-xTB covers it below.
 
 ### New calculations: optimising the guesses with GFN2-xTB
@@ -358,7 +358,7 @@ but has no check on ML guesses beforehand and no stereo check, could call these 
 ## Limitations in detail
 
 - **Retrospective, apart from new DFT and GFN2-xTB optimisations.** The headline numbers mean close to RDB7's reference TS
-  geometry, not that a TS optimisation from the guess converges. The DFT check is small (12 reactions: the first trusted ones by id and the
+  geometry, not that a TS optimisation from the guess converges. The DFT check is small (13 reactions: the first trusted ones by id and the
   re-generate ones, not a random sample; ωB97X/def2-SVP rather than RDB7's ωB97X-D3/def2-TZVP; no amber reactions) and
   confirms, rather than proves, the symmetry argument (an achiral Hamiltonian gives mirror images identical energies).
 - **Whether a handedness error counts as wrong depends on what you need.** For a barrier height alone, a whole mirror image
