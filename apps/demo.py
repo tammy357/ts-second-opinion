@@ -800,8 +800,8 @@ def _(ROOT, json, mo):
                    mo.Html(f"<table style='width:100%;border-collapse:collapse;font-size:14px'><tr><th {_th.format('left')}>Verdict</th>"
                            f"<th {_th.format('right')}>Found the reference TS</th><th {_th.format('right')}>First-order saddle point</th></tr>{_body}</table>"),
                    mo.md("<span style='color:#55534e;font-size:12px'>Found the reference TS: one imaginary frequency, within 0.2 Å "
-                         "(D-MAE) of the RDB7 TS, right handedness. The first trusted reactions by id and all six re-generate reactions in the "
-                         "test set; a small sample, not a random one. scripts/dft_prospective.py.</span>")]
+                         "(D-MAE) of the RDB7 TS, right handedness. The first trusted and check-with-DFT reactions by id and all six re-generate "
+                         "reactions in the test set; a small sample, not a random one. scripts/dft_prospective.py.</span>")]
         _red = [_x for _x in _d['reactions'] if _x['verdict'] == 'red']
         _passed = [_x for _x in _red if _x['converged'] and _x['n_imaginary'] == 1 and not _x['found_the_reference_ts']]
         if _passed:

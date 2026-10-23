@@ -19,5 +19,5 @@
   frequencies, i.e. the TS of the mirror-image reaction. Certified trust (conformal selection) is an average guarantee
   that assumes exchangeable data. Results are mostly retrospective, plus new TS optimisations:
   DFT wB97X/def2-SVP (scripts/dft_prospective.py, results/dft/): mirror pair 3509 0.0006 kcal/mol apart, both 1 imag;
-  found reference TS 6/6 trusted vs 0/6 re-generate (5 of those still pass a frequency check).
+  found reference TS 6/6 trusted, 1/3 check vs 0/6 re-generate (5 of those still pass a frequency check).
   GFN2-xTB (scripts/xtb_prospective.py): mirror pairs 34/40 identical saddles; found reference TS 77% / 60% / 0% by verdict.

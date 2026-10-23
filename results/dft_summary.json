@@ -24,6 +24,11 @@
    "n": 6,
    "found_the_reference_ts": 6,
    "first_order_saddle": 6
+  },
+  "amber": {
+   "n": 3,
+   "found_the_reference_ts": 1,
+   "first_order_saddle": 3
   }
  },
  "reactions": [
@@ -60,6 +65,24 @@
    "converged": true,
    "n_imaginary": 1,
    "dmae_to_reference_ts_A": 0.0197,
+   "handedness_correct": true,
+   "found_the_reference_ts": true
+  },
+  {
+   "reaction_id": 24,
+   "verdict": "amber",
+   "converged": true,
+   "n_imaginary": 1,
+   "dmae_to_reference_ts_A": 0.2313,
+   "handedness_correct": true,
+   "found_the_reference_ts": false
+  },
+  {
+   "reaction_id": 28,
+   "verdict": "amber",
+   "converged": true,
+   "n_imaginary": 1,
+   "dmae_to_reference_ts_A": 0.0375,
    "handedness_correct": true,
    "found_the_reference_ts": true
   },
@@ -107,6 +130,15 @@
    "dmae_to_reference_ts_A": 0.0087,
    "handedness_correct": true,
    "found_the_reference_ts": true
+  },
+  {
+   "reaction_id": 72,
+   "verdict": "amber",
+   "converged": true,
+   "n_imaginary": 1,
+   "dmae_to_reference_ts_A": 0.2061,
+   "handedness_correct": true,
+   "found_the_reference_ts": false
   },
   {
    "reaction_id": 78,
