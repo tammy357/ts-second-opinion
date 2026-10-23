@@ -14,7 +14,7 @@ OUT = ROOT / 'docs' / 'app'
 EXAMPLES = (3509, 5877, 1292, 2577, 1093)
 FILES = (['results/' + f for f in ('metrics.json', 'triage_summary.json', 'certify.json', 'explanations.json',
                                    'leaderboard.json', 'authoring_log.jsonl', 'authoring_log_run1.jsonl',
-                                   'fig_final_answer.png', 'fig_certify.png', 'fig_risk_coverage.png')]
+                                   'fig_final_answer.png', 'fig_certify.png', 'fig_risk_coverage.png', 'fig_dft.png')]
          + ['examples/rdb7_3509/' + f for f in ('reaction.smi', 'reactant.xyz', 'product.xyz', 'guesses.xyz')]
          + ['examples/evaluate/' + f for f in ('predictions.xyz', 'references.xyz', 'reactions.smi')]
          + ['benchmark/' + f for f in ('mirror_test_references.xyz', 'mirror_test_true_references.xyz')]
@@ -35,8 +35,9 @@ def bundle():
             rel = p.relative_to(ROOT).as_posix()
             if p.is_file() and '__pycache__' not in rel and not rel.startswith(('tsso/checks_draft', 'tsso/checks_discovered')):
                 add(rel, p.read_bytes())
-        for f in FILES:
-            add(f, (ROOT / f).read_bytes())
+        for f in FILES + ['results/dft_summary.json']:
+            if (ROOT / f).exists():
+                add(f, (ROOT / f).read_bytes())
         full = json.load(gzip.open(ROOT / 'data' / 'goflow8_rdb7_test.json.gz', 'rt'))
         full['reactions'] = [r for r in full['reactions'] if r['id'] in EXAMPLES]
         full['description'] = 'The worked examples only (for the in-browser app). ' + full.get('description', '')

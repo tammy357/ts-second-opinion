@@ -771,15 +771,60 @@ def _(ROOT, aud_btn, aud_demo, aud_order, aud_p, aud_r, aud_smi, mo):
 
 
 @app.cell
+def _(ROOT, json, mo):
+    _f = ROOT / 'results' / 'dft_summary.json'
+    mo.stop(not _f.exists())
+    _d = json.load(open(_f))
+    _mk = {True: '✓', False: '✕'}
+    _parts = [mo.md('### New DFT calculations'),
+              mo.md("To go beyond retrospective numbers, we optimised guesses to transition states with **DFT** "
+                    "(ωB97X/def2-SVP in PySCF, the functional family of RDB7's reference calculations, with a Sella saddle "
+                    "search) and computed analytic frequencies.")]
+    _fig = ROOT / 'results' / 'fig_dft.png'
+    if _fig.exists():
+        _parts.append(mo.image(_fig.read_bytes(), width=700))
+    for _m in _d['mirror']:
+        _parts.append(mo.md(
+            f"**Reaction {_m['reaction_id']}: a DFT frequency check accepts the mirror image.** The unrepaired and the repaired "
+            f"guess both optimise to transition states with {'one imaginary frequency each' if _m['both_first_order_saddles'] else 'the frequencies shown'} "
+            f"({_m['imaginary_cm1'][0]} and {_m['imaginary_cm1'][1]} cm⁻¹), {_m['energy_difference_kcal']:.4f} kcal/mol apart. "
+            f"Handedness: unrepaired {_mk[_m['unrepaired_handedness_correct']]}, repaired {_mk[_m['repaired_handedness_correct']]}."))
+    _td = "style='padding:6px 8px;border-bottom:1px solid #e3e2de;text-align:{}'"
+    _th = "style='padding:6px 8px;border-bottom:2px solid #e3e2de;color:#55534e;text-align:{}'"
+    _names = {'green': '✓ trust', 'amber': '! check with DFT', 'red': '✕ re-generate'}
+    if _d['by_verdict']:
+        _body = ''.join(f"<tr><td {_td.format('left')}>{_names[_v]}</td><td {_td.format('right')}><b>{_x['found_the_reference_ts']} of {_x['n']}</b></td>"
+                        f"<td {_td.format('right')}>{_x['first_order_saddle']} of {_x['n']}</td></tr>"
+                        for _v, _x in sorted(_d['by_verdict'].items(), key=lambda _kv: ['green', 'amber', 'red'].index(_kv[0])))
+        _parts += [mo.md('**Do the verdicts hold at DFT level?** Recommended guesses optimised with DFT:'),
+                   mo.Html(f"<table style='width:100%;border-collapse:collapse;font-size:14px'><tr><th {_th.format('left')}>Verdict</th>"
+                           f"<th {_th.format('right')}>Found the reference TS</th><th {_th.format('right')}>First-order saddle point</th></tr>{_body}</table>"),
+                   mo.md("<span style='color:#55534e;font-size:12px'>Found the reference TS: one imaginary frequency, within 0.2 Å "
+                         "(D-MAE) of the RDB7 TS, right handedness. The first trusted reactions by id and all six re-generate reactions in the "
+                         "test set; a small sample, not a random one. scripts/dft_prospective.py.</span>")]
+        _red = [_x for _x in _d['reactions'] if _x['verdict'] == 'red']
+        _passed = [_x for _x in _red if _x['converged'] and _x['n_imaginary'] == 1 and not _x['found_the_reference_ts']]
+        if _passed:
+            _parts.append(mo.callout(mo.md(
+                f"**{len(_passed)} of {len(_red)} re-generate guesses still pass a DFT frequency check** (one imaginary frequency "
+                f"after a DFT optimisation), yet none of them is the reference TS: "
+                + '; '.join(f"reaction {_x['reaction_id']}: {'wrong handedness' if not _x['handedness_correct'] else 'wrong geometry'}, "
+                            f"D-MAE {_x['dmae_to_reference_ts_A']:.2f} Å" for _x in _passed)
+                + '. The stereo and geometry rules caught them before any DFT was spent.'), kind='warn'))
+    mo.vstack(_parts)
+    return
+
+
+@app.cell
 def _(mo):
     _rows = [('✓ trust', '23 of 30 (77%)', '28 of 30', '0.07 Å'), ('! check with DFT', '18 of 30 (60%)', '29 of 30', '0.18 Å'),
              ('✕ re-generate', '0 of 6 (0%)', '5 of 6', '0.32 Å')]
     _td = "style='padding:6px 8px;border-bottom:1px solid #e3e2de;text-align:{}'"
     _th = "style='padding:6px 8px;border-bottom:2px solid #e3e2de;color:#55534e;text-align:{}'"
     mo.vstack([
-        mo.md('### New calculations: optimising the guesses with GFN2-xTB'),
-        mo.md('To go beyond retrospective numbers, we optimised guesses to transition states with GFN2-xTB (a semi-empirical '
-              'quantum-chemistry method, not DFT) and computed their frequencies.'),
+        mo.md('### A larger sample with GFN2-xTB'),
+        mo.md('We also optimised guesses for 106 reactions with GFN2-xTB (a faster, semi-empirical quantum-chemistry '
+              'method, not DFT) and computed their frequencies.'),
         mo.md('**A mirror image passes a frequency check.** In 34 of 40 mirror-repaired reactions, the unrepaired and the '
               'repaired guess optimised to transition states with the same energy (within 0.01 kcal/mol) and the same '
               'imaginary frequency (within 6 cm⁻¹). The unrepaired one kept the wrong handedness in all 40.'),
@@ -821,8 +866,9 @@ def _(ROOT, mo):
         mo.hstack([mo.image((ROOT / 'results' / 'fig_final_answer.png').read_bytes(), width=470),
                    mo.image((ROOT / 'results' / 'fig_certify.png').read_bytes(), width=560)], widths='equal'),
         mo.image((ROOT / 'results' / 'fig_risk_coverage.png').read_bytes(), width=760),
-        mo.md("<span style='color:#55534e;font-size:12px'>Retrospective: GoFlow's released predictions for the 1,194 RDB7 "
-              "test reactions; rules were gated only on the 9,540 training reactions. The GoFlow paper notes that D-MAE "
+        mo.md("<span style='color:#55534e;font-size:12px'>Mostly retrospective: GoFlow's released predictions for the 1,194 RDB7 "
+              "test reactions; rules were gated only on the 9,540 training reactions; plus the new DFT and GFN2-xTB "
+              "calculations in section 5. The GoFlow paper notes that D-MAE "
               "misses chirality errors, and FK-Flow (Mark, Galustian, Kovar & Heid, 2025) measured them and fixed them by "
               "steering generation. TS Second Opinion works after generation, on any model's output, and adds repair, a "
               "statistical guarantee and agent tools. Code: github.com/tammy357/ts-second-opinion (MIT).</span>")])

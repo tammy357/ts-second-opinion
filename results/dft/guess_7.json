@@ -1,0 +1,51 @@
+{
+ "reaction_id": 7,
+ "verdict": "green",
+ "mirror_repaired": false,
+ "level": "wb97x/def2-svp",
+ "charge": 0,
+ "multiplicity": 1,
+ "recommended": {
+  "converged": true,
+  "steps": 8,
+  "energy_kcal": -174279.93646099794,
+  "n_imaginary": 1,
+  "imaginary_cm1": 644.569751673215,
+  "minutes": 3.2,
+  "xyz": [
+   [
+    -0.14198,
+    -1.189573,
+    0.059081
+   ],
+   [
+    0.88781,
+    0.30281,
+    0.220774
+   ],
+   [
+    0.195434,
+    1.239603,
+    0.467991
+   ],
+   [
+    -1.574058,
+    0.414312,
+    0.507914
+   ],
+   [
+    -1.246581,
+    -0.677286,
+    0.272395
+   ],
+   [
+    1.878425,
+    -0.101996,
+    0.040227
+   ]
+  ],
+  "handedness_correct": true,
+  "dmae_to_reference_ts_A": 0.0087,
+  "found_the_reference_ts": true
+ }
+}

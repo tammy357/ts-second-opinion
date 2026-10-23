@@ -17,5 +17,7 @@
 - Claims: keep geometry errors (D-MAE > 0.2 A) and handedness errors (wrong stereo) separate. The rules fix handedness
   (17.7% -> 2.3%), not geometry (14.1% -> 11.7%). 90% of wrong-handed guesses are whole mirror images: same energy and
   frequencies, i.e. the TS of the mirror-image reaction. Certified trust (conformal selection) is an average guarantee
-  that assumes exchangeable data. Results are retrospective (no new DFT), plus new GFN2-xTB TS optimisations
-  (scripts/xtb_prospective.py): mirror pairs 34/40 identical saddles; found reference TS 77% / 60% / 0% by verdict.
+  that assumes exchangeable data. Results are mostly retrospective, plus new TS optimisations:
+  DFT wB97X/def2-SVP (scripts/dft_prospective.py, results/dft/): mirror pair 3509 0.0006 kcal/mol apart, both 1 imag;
+  found reference TS 6/6 trusted vs 0/5 re-generate (4 of those still pass a frequency check).
+  GFN2-xTB (scripts/xtb_prospective.py): mirror pairs 34/40 identical saddles; found reference TS 77% / 60% / 0% by verdict.

@@ -22,6 +22,7 @@ Issues = "https://github.com/tammy357/ts-second-opinion/issues"
 [project.optional-dependencies]
 dev = ["pytest>=7"]
 xtb = ["tblite>=0.4", "scipy"]
+dft = ["pyscf>=2.6", "sella>=2.3", "ase>=3.22"]
 api = ["anthropic>=0.40"]
 
 [project.scripts]

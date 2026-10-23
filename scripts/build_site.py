@@ -51,7 +51,7 @@ def main():
     (DOCS / 'assets').mkdir(parents=True, exist_ok=True); (DOCS / 'reports').mkdir(exist_ok=True)
     for f in ('3Dmol-min.js', '3Dmol-LICENSE.txt'):
         shutil.copy(ROOT / 'tsso' / 'assets' / f, DOCS / 'assets' / f)
-    for f in ('fig_hero_mirror.png', 'fig_final_answer.png', 'fig_certify.png', 'fig_risk_coverage.png'):
+    for f in ('fig_hero_mirror.png', 'fig_final_answer.png', 'fig_certify.png', 'fig_risk_coverage.png', 'fig_dft.png'):
         shutil.copy(ROOT / 'results' / f, DOCS / 'assets' / f)
     (DOCS / '.nojekyll').write_text('')
 
@@ -255,9 +255,11 @@ are close <b>and</b> correctly handed. Handedness stays at 82–85% correct for 
 <h2>6 · Results</h2>
 <div class="grid2"><img class="fig" src="assets/fig_final_answer.png" alt="final answers wrong, by kind">
 <img class="fig" src="assets/fig_certify.png" alt="certified trust"></div>
-<p class="muted">Retrospective: GoFlow's released predictions for the 1,194 RDB7 test reactions; rules gated only on the 9,540
-training reactions; no new DFT, but new GFN2-xTB transition-state optimisations confirm the verdicts
-(the right TS is reached for 77% of trusted guesses and 0% of re-generate ones). <a href="https://arxiv.org/abs/2509.01543">FK-Flow</a> (from the GoFlow group) first measured
+<img class="fig" src="assets/fig_dft.png" alt="new DFT calculations" style="max-width:760px">
+<p class="muted">Mostly retrospective: GoFlow's released predictions for the 1,194 RDB7 test reactions; rules gated only on the 9,540
+training reactions. New calculations test the verdicts: DFT (ωB97X/def2-SVP) transition-state optimisations on a small
+sample (every trusted guess reached the reference TS, no re-generate guess did, and a mirror image passed the DFT frequency
+check), and GFN2-xTB on 106 reactions (the right TS is reached for 77% of trusted guesses and 0% of re-generate ones). <a href="https://arxiv.org/abs/2509.01543">FK-Flow</a> (from the GoFlow group) first measured
 GoFlow's chirality errors and fixed them by steering generation; TS Second Opinion works afterwards, on any model's output.
 Full results and limitations: <a href="https://github.com/tammy357/ts-second-opinion/blob/main/docs/RESULTS.md">docs/RESULTS.md</a>.</p>
 
