@@ -20,6 +20,10 @@
 - **Clearer claims.** Certified trust is described everywhere as an average guarantee that assumes new reactions resemble
   the calibration set; the harder-split results note their overlap with the gate's training data; RESULTS.md now
   matches the recorded `/second-opinion` agent run.
+- **Works where WebGL is off.** The 3D views on the showcase page, in report cards and in the app show a short note
+  instead; before, the rest of the showcase page stayed empty in such browsers. The in-browser app also hides the
+  charge and multiplicity inputs, which apply only without a SMILES.
+- **Plain-language explainer** on the showcase page, and a roadmap of open problems in the README.
 
 ## 0.2.0 (2026-10-22)
 
