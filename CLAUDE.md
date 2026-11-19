@@ -4,11 +4,15 @@
 - MCP server: `tsso mcp` (configured in .mcp.json; needs `pip install -e .`). Tools: triage_structures (any reaction, any
   elements, from xyz text), triage_batch, evaluate_predictions (stereo-aware scoring), certify_trust, list_reactions,
   triage_reaction, list_rules, get_rule_source, gate_check, save_rule, write_orca_input, benchmark_summary,
-  audit_rdb7_dataset. Agent skill: tsso/skill/SKILL.md (copy in .claude/skills/; keep the two identical).
+  audit_rdb7_dataset, plan_dft_budget, plan_evidence. Agent skill: tsso/skill/SKILL.md (copy in .claude/skills/; keep the two identical).
 - Your own reactions: triage_structures (SMILES optional: without it tsso/infer.py reads bonds, bond orders and
   stereocentres from the reactant and product geometries; validated in results/geometry_input_validation.json) and
   triage_batch (a folder of reaction folders, or a CSV). Every result has feedback_url (a pre-filled GitHub form).
-- CLI equivalents: tsso check / batch / evaluate / certify / triage / gate / author / audit; tsso mcp-config and
+- DFT budget: plan_dft_budget / `tsso plan` (tsso/plan.py) is a fixed rule: red -> re-generate, runs to the most disputed,
+  other amber -> hold, rest -> trust. Never pick the reactions yourself; pass on its caveats (IRC after each run; shared
+  errors are invisible; tested on GoFlow/RDB7 only, results/plan_evaluation.json). tsso/agent.py is the chat agent:
+  tools decide, structures are redacted, numbers are traced (check_numbers).
+- CLI equivalents: tsso check / batch / plan / agent / evaluate / certify / triage / gate / author / audit; tsso mcp-config and
   tsso skill --install connect agents. Python: `from tsso import second_opinion` (pass None for the SMILES to infer it).
 - Outside a clone (pip install from git), tsso/paths.py fetches benchmark data on first use and writes to ./tsso_output.
 - Example inputs live in examples/. `tsso check ... --report r.html` writes a one-file HTML report card.

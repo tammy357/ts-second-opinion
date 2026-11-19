@@ -10,6 +10,9 @@
                                      --smiles, bonds and stereocentres are read from the geometries
   tsso batch my_reactions/ --out tsso_batch
                                      triage a folder of reaction folders (or a CSV) into one verdict table
+  tsso plan tsso_batch --budget 5    say where a fixed number of DFT runs should go (a fixed rule; omit the folder to
+                                     try it on the RDB7 benchmark with --sample 40 --evaluate)
+  tsso agent "question"              ask the planning agent in your own words (needs ANTHROPIC_API_KEY)
   tsso evaluate preds.xyz refs.xyz reactions.smi
                                      stereo-aware evaluation of any TS generator's test-set predictions
   tsso certify --target 0.05         certified trust: which guesses to trust at a target average error rate
@@ -83,6 +86,16 @@ def main(argv=None):
     p.add_argument('--charge', type=int, default=0, help='total charge for reactions without a SMILES (default 0)')
     p.add_argument('--multiplicity', type=int, default=1, help='spin multiplicity for reactions without a SMILES (default 1)')
     p.add_argument('--reports', action='store_true', help='also write an HTML report card per reaction')
+    p = sub.add_parser('plan', help='say where a fixed number of DFT runs should go')
+    p.add_argument('source', nargs='?', default='', help='verdicts.csv from `tsso batch`, its folder, or a folder / CSV of '
+                                                         'reactions; omit to use the RDB7 benchmark')
+    p.add_argument('--budget', type=int, required=True, help='DFT runs you can afford')
+    p.add_argument('--sample', type=int, help='benchmark: draw this many reactions at random')
+    p.add_argument('--seed', type=int, default=0)
+    p.add_argument('--evaluate', action='store_true', help='benchmark: show what the reference TS says about the picks')
+    p.add_argument('--target', type=float, help='benchmark: add certified trust at this average error rate')
+    p = sub.add_parser('agent', help='ask the planning agent a question (needs ANTHROPIC_API_KEY)')
+    p.add_argument('question')
     p = sub.add_parser('evaluate', help='stereo-aware evaluation of any TS generator')
     p.add_argument('predictions'); p.add_argument('references'); p.add_argument('reactions')
     p.add_argument('--order', choices=['map', 'smiles'], default='map'); p.add_argument('--threshold', type=float, default=0.2)
@@ -176,6 +189,40 @@ def main(argv=None):
                 print(f"  ! {row['id']}: {row['error']}")
             print(f"  verdict table: {res['table']}")
             print('  ' + res['note'])
+    elif a.cmd == 'plan':
+        res = service.plan_dft_budget(a.budget, a.source, None, a.sample, a.seed, a.evaluate, a.target)
+        if a.json or 'error' in res:
+            _print(res, True)
+        else:
+            from .plan import ACTION_LABEL
+            print(res['in_plain_words'])
+            for it in res['plan']:
+                if it['action'] != 'trust':
+                    print(f"  {ACTION_LABEL[it['action']]:<20} {it['id']:<14} {it['why']}")
+            chk = res.get('reference_check')
+            if chk:
+                print(f"  reference check (evaluation only): {chk['run_dft']['geometry_wrong']} of {chk['run_dft']['reactions']} "
+                      f"picks had a wrong geometry; picking at random would give "
+                      f"{chk['expected_geometry_wrong_if_runs_were_picked_at_random']} on average")
+            if res.get('plan_table'):
+                print(f"  plan table: {res['plan_table']}")
+            for c in res['caveats']:
+                print('  note: ' + c)
+    elif a.cmd == 'agent':
+        import os
+        from .agent import run, http_sender
+        key = os.environ.get('ANTHROPIC_API_KEY')
+        if not key:
+            ap.error('tsso agent needs ANTHROPIC_API_KEY; `tsso plan` gives the same plan without a language model')
+        out = run(a.question, http_sender(key))
+        if a.json:
+            _print(out, True)
+        else:
+            for st in out['steps']:
+                print(f"  [tool] {st['tool']}({json.dumps(st['input'])})")
+            print(out['answer'])
+            if out['numbers_not_from_tools']:
+                print('  numbers not found in any tool result (check them): ' + ', '.join(out['numbers_not_from_tools']))
     elif a.cmd == 'evaluate':
         res = service.evaluate_files(a.predictions, a.references, a.reactions, a.order, a.threshold)
         if a.json or 'error' in res:

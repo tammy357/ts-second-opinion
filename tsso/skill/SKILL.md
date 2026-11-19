@@ -38,6 +38,10 @@ reaction.smi), or a CSV with columns id, reactant, product, guesses:
 tsso batch my_reactions/ --out tsso_batch        # writes tsso_batch/verdicts.csv plus geometries and ORCA inputs
 ```
 
+A fixed number of DFT runs to spend: `tsso plan tsso_batch --budget 5` (MCP tool plan_dft_budget) says which reactions
+get a run (the ones whose guesses disagree most), which to trust, which to hold and which to re-generate, and writes
+`dft_plan.csv`. It is a fixed rule: do not pick the reactions yourself.
+
 Score a generator's test-set predictions with and without handedness: `tsso evaluate preds.xyz refs.xyz reactions.smi`.
 
 From Python: `from tsso import second_opinion; second_opinion(None, "reactant.xyz", "product.xyz", ["guesses.xyz"])`.
@@ -64,5 +68,8 @@ gate_check and save_rule (turn a rule into a tested check).
   them on the person's own reference TSs first (`tsso gate`).
 - The amber cut-off was calibrated on GoFlow/RDB7. For another generator, use batch_disagreement_rank in batch output,
   or recalibrate.
+- A DFT budget plan finds likely errors; it cannot see an error every guess shares, and it was tested on GoFlow/RDB7
+  only (quote plan_evidence as benchmark results, not predictions). Tell the person to confirm each optimised TS with
+  an IRC calculation: one imaginary frequency is not enough. Reactions on hold are not trusted.
 - Certified trust (conformal selection) is an average guarantee that holds only if new reactions resemble the
   calibration set; say so whenever you quote it.

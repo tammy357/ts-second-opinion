@@ -10,7 +10,8 @@ mcp = FastMCP('ts-second-opinion', instructions=(
     'Checks machine-learned transition-state (TS) guesses before any DFT is spent. Rules are plain-English chemistry '
     'checks turned into Python and kept only if they accept >= 99% of 9,540 real DFT TSs (the gate). '
     'For your own reactions: triage_structures (reactant, product and TS guesses as xyz text; the atom-mapped SMILES is '
-    'optional, since bonds and stereocentres can be read from the geometries) or triage_batch (a folder or CSV). '
+    'optional, since bonds and stereocentres can be read from the geometries) or triage_batch (a folder or CSV); '
+    'then plan_dft_budget says where a fixed number of DFT runs should go. '
     'For the benchmark: list_reactions -> triage_reaction -> explain. To add a rule: write a check, call gate_check, '
     'revise from its feedback, then save_rule. Never use score_against_reference to make decisions; it is for evaluation. '
     'Offer feedback_url ("Was this verdict right?") to the person; it opens a GitHub form and shares no structures.'))
@@ -55,6 +56,27 @@ def triage_batch(path: str, out_dir: str = 'tsso_batch', charge: int = 0, multip
     ORCA inputs for reactions to check with DFT or re-generate. charge/multiplicity apply to reactions without a SMILES."""
     from .batch import triage_batch as run
     return run(path, out_dir, charge, multiplicity, reports)
+
+
+@mcp.tool()
+def plan_dft_budget(budget: int, path: str = '', reaction_ids: list[int] | None = None, sample: int | None = None,
+                    seed: int = 0, evaluate: bool = False, target_error_rate: float | None = None) -> dict:
+    """Plan where a fixed number of DFT runs goes. The plan is a fixed rule, not a judgement: re-generate reactions
+    that still break a rule, give the runs to the reactions whose guesses disagree most, hold the other "check with
+    DFT" reactions, trust the rest. path: a verdicts.csv from triage_batch, the folder holding it, or a folder / CSV
+    of reactions (triaged first); writes dft_plan.csv next to it. Leave path empty for the RDB7 benchmark: give
+    reaction_ids, or sample (how many to draw) and seed; there evaluate=True adds what the reference TS says about
+    the picks (evaluation only) and target_error_rate adds certified trust. Pass the returned caveats on to the
+    person, and never pick the reactions yourself."""
+    return service.plan_dft_budget(budget, path, reaction_ids, sample, seed, evaluate, target_error_rate)
+
+
+@mcp.tool()
+def plan_evidence() -> dict:
+    """How the planning rule did when tested against reference TSs (GoFlow guesses, RDB7): wrong guesses among the
+    picks against picking at random, by budget and batch size; a second ensemble; what stays unchecked; what TS
+    optimisations returned; and the limits of the test. Quote these as benchmark results, not as predictions."""
+    return service.plan_evidence()
 
 
 @mcp.tool()

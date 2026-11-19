@@ -120,6 +120,76 @@ We did not find prior work applying conformal selection to machine-learned TS gu
 methods have been used for generative molecular design ([ConfHit](https://arxiv.org/abs/2603.07371),
 [SCoRE](https://arxiv.org/abs/2603.24704)).
 
+### Where should the DFT go? Testing the budget plan
+
+`tsso plan` (MCP tool `plan_dft_budget`, app section 3b) takes the verdicts for a set of reactions and the number of
+DFT runs you can afford. The rule is fixed: re-generate what still breaks a rule; give the runs to the reactions whose
+guesses disagree most; hold the other "check with DFT" reactions; trust the rest. It has no fitted parameters and never
+sees a reference TS. Using model disagreement to decide where an expensive calculation goes is borrowed from active
+learning ("query by committee", [Seung, Opper & Sompolinsky 1992](https://doi.org/10.1145/130385.130417); for learned
+potentials, [Schran, Brezina & Marsalek 2020](https://doi.org/10.1063/5.0016004)). There it chooses training data;
+here it chooses which answers to check.
+
+**The test** (`scripts/plan_evaluation.py`, `results/plan_evaluation.json`). Afterwards, we used the reference TSs to
+count how many picked reactions really had a wrong recommended guess (D-MAE above 0.2 Å), since those are the ones a
+DFT run with a reaction-path check would expose. In batches the size a person brings (random draws from the 1,194 test
+reactions, 5,000 draws each, 5 runs):
+
+| Reactions in the batch | Picks with a wrong geometry (mean of 5) | Picked at random | Perfect order | Batches where no pick was wrong |
+|---|---|---|---|---|
+| 20 | 1.61 | 0.57 | 2.26 | 16% |
+| 40 | 2.25 | 0.58 | 3.98 | 5% |
+| 100 | 3.06 | 0.57 | 4.99 | 1% |
+
+Over all 1,194 reactions at once (8 GoFlow seed models; 11.5% of the reactions that can get a run have a wrong
+geometry):
+
+| DFT runs | Picks with a wrong geometry | 95% interval for that share | Picked at random | Any "check with DFT" reaction | Perfect order |
+|---|---|---|---|---|---|
+| 5 | 5 (100%) | 60–100% | 0.57 | 1.98 | 5 |
+| 10 | 9 (90%) | 70–100% | 1.14 | 3.97 | 10 |
+| 25 | 21 (84%) | 64–100% | 2.86 | 9.92 | 25 |
+| 50 | 32 (64%) | 52–82% | 5.72 | 19.83 | 50 |
+| 100 | 52 (52%) | 42–63% | 11.45 | 39.66 | 100 |
+
+"Any check-with-DFT reaction" is what you would get by working through that verdict in no particular order, so the
+ranking within the verdict is what adds most at small budgets. Picking the least disputed first found 0 wrong
+guesses at every budget. With a different ensemble (five GoFlow runs of four model sizes, same reactions) the first
+10 picks held 6 wrong guesses and the first 50 held 33 (against 9 and 32 above), so the gain does not depend on
+one set of seeds, though the top of the order is noisier.
+
+**What the plan does not do.**
+
+- *It does not find errors the models share.* The trusted reactions keep a 4.4% geometry-error rate
+  (6.2% counting handedness) whatever the budget, because the budget only shrinks the on-hold set. Ensemble spread
+  measures variance, not bias; for learned potentials, disagreement has been reported to miss errors that come from
+  the model family itself ([Knowing when to trust machine-learned interatomic potentials, 2026](https://arxiv.org/abs/2605.00640)).
+- *It does not maximise successful runs.* A run started from a wrong guess rarely reaches the right TS: in the
+  GFN2-xTB tests, "check with DFT" guesses with a wrong geometry reached the reference TS in 1 of 9 runs, those with a
+  right geometry in 17 of 21. So many picked reactions will come back as "re-generate". That is the check working,
+  but it is not the same as getting 5 finished TSs for 5 runs.
+- *A frequency check is not the check.* Of the 62 xTB optimisations that ended with exactly one imaginary frequency,
+  21 were not the reference TS (5 trust, 11 check, 5 re-generate; some of these are xTB differing from DFT). A saddle point
+  with one imaginary frequency need not join this reactant to this product, which is what an IRC calculation tests, so
+  the plan asks for one after every run.
+- *It is tested on one generator family and one dataset,* and the two ensembles share the same reactions. The harder
+  reaction-core and barrier splits here have one model each, so there is no disagreement to rank by and the plan is
+  untested on them. With one guess per reaction the plan can only apply the rules.
+- *No new DFT was run for this test.* It counts wrong guesses among the picks; it does not show what a campaign that
+  followed the plan would have saved.
+
+**The planning agent** (`tsso agent`, the chat in app section 3b, `tsso/agent.py`) lets a person ask for a plan in their
+own words. Three properties are enforced in code and covered by tests (`tests/test_plan.py`), not left to the prompt:
+Claude can only call the planning rule and read-only tools, so it cannot choose the reactions; tool results are
+stripped of coordinates, SMILES and ORCA inputs before Claude sees them (verdicts, rule names, atom labels such as
+"C3–H7" and disagreement values are sent); and every number in its answer that appears in no tool result and not in
+the person's messages is listed under the answer. That last check is a coarse net, not proof. We measured how often an arbitrary number would slip through
+it for 40-reaction batches: with only the plan in view, about 10% of whole numbers from 0 to 100 and 2–3% of decimals
+match something by chance; once the agent has also read the benchmark evidence, about 31% of whole numbers and 7–11% of
+decimals do. So it catches invented rates and decimals well and small whole numbers poorly. A traced number can still
+be in a wrong sentence, and a correct sum that Claude worked out is flagged too. No answer from the agent has been
+recorded or scored yet (that needs an API key, which the build environment did not have); the plan table is the record.
+
 ### New calculations: optimising the guesses with DFT
 
 Everything above is retrospective. To test the two central claims at the level of theory that matters, we optimised TS
@@ -352,8 +422,8 @@ plain-English rule ──► Claude writes check(rxn, xyz) ──► gate: accep
 
 TS Second Opinion is also an MCP server, so Claude Code, Claude Desktop or any MCP client can use it as tools:
 `triage_structures` (your own reaction and guesses, from any generator), `evaluate_predictions`, `certify_trust`,
-`list_reactions`, `triage_reaction`, `list_rules`, `get_rule_source`, `gate_check`, `save_rule`, `write_orca_input` and
-`benchmark_summary`.
+`list_reactions`, `triage_reaction`, `list_rules`, `get_rule_source`, `gate_check`, `save_rule`, `write_orca_input`,
+`benchmark_summary`, `triage_batch`, `plan_dft_budget` and `plan_evidence`.
 
 ```bash
 pip install -e .            # installs the `tsso` command

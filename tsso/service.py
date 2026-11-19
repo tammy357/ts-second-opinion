@@ -430,6 +430,113 @@ def write_orca_input(reaction_id):
     return {'verdict': t.verdict, 'files': [shown(outdir / f'{stem}.inp'), shown(outdir / f'{stem}.xyz')], 'orca_input': inp}
 
 
+# ------------------------------------------------------------------ planning a DFT budget
+def _benchmark_rows():
+    """Verdict rows for the 1,194 RDB7 test reactions, with the reference-based labels kept apart (evaluation only)."""
+    f = results_file('triage.csv')
+    if f is None:
+        return None, None
+    raw = list(csv.DictReader(open(f)))
+    rows = [{'id': x['reaction_id'], 'verdict': x['verdict'], 'disagreement_A': float(x['disagreement_A']),
+             'mirror_repaired': x['mirrored'] == 'True', 'rules_broken': x['failed_rules']} for x in raw]
+    truth = {x['reaction_id']: {'geometry_wrong': x['geometry_bad'] == 'True', 'handedness_wrong': x['stereo_wrong'] == 'True'}
+             for x in raw}
+    return rows, truth
+
+
+def score_plan(plan, truth):
+    """What the reference TS says about a plan, by action. For evaluation only: a plan never uses it."""
+    out = {}
+    for action in ('run_dft', 'trust', 'hold', 'regenerate'):
+        ids = [it['id'] for it in plan['plan'] if it['action'] == action and it['id'] in truth]
+        out[action] = {'reactions': len(ids),
+                       'geometry_wrong': sum(truth[i]['geometry_wrong'] for i in ids),
+                       'handedness_wrong': sum(truth[i]['handedness_wrong'] for i in ids),
+                       'geometry_wrong_ids': [i for i in ids if truth[i]['geometry_wrong']]}
+    can = [it['id'] for it in plan['plan'] if it['action'] in ('run_dft', 'trust', 'hold') and it['id'] in truth]
+    base = sum(truth[i]['geometry_wrong'] for i in can) / len(can) if can else 0.0
+    out['expected_geometry_wrong_if_runs_were_picked_at_random'] = round(out['run_dft']['reactions'] * base, 2)
+    out['note'] = ('Uses the RDB7 reference TS (wrong geometry = D-MAE above 0.2 A). For evaluation only; '
+                   'the plan was made without it.')
+    return out
+
+
+def plan_dft_budget(budget, path='', reaction_ids=None, sample=None, seed=0, evaluate=False, target_error_rate=None,
+                    out_dir=None):
+    """Plan where `budget` DFT runs go (see tsso.plan). Either your own reactions or the RDB7 benchmark.
+
+    path: a verdicts.csv written by `tsso batch`, the folder holding it, or a folder / CSV of reactions (triaged first
+    into out_dir). Empty: the benchmark, restricted to reaction_ids, or to `sample` reactions drawn with `seed`.
+    evaluate (benchmark only): add what the reference TS says about the picks. target_error_rate (benchmark only): add
+    certified trust, calibrated on the benchmark reactions that are not in the batch.
+    """
+    from .plan import plan_dft_budget as make, read_verdict_table, write_plan_csv, explain_plan
+    if isinstance(budget, float) and budget.is_integer():
+        budget = int(budget)
+    if path:
+        src = Path(path)
+        table = src / 'verdicts.csv' if src.is_dir() and (src / 'verdicts.csv').is_file() else src
+        if not (table.is_file() and table.suffix.lower() == '.csv' and
+                'verdict' in open(table, encoding='utf-8-sig').readline().lower()):
+            from .batch import triage_batch
+            res = triage_batch(src, out_dir or 'tsso_batch')
+            if 'error' in res:
+                return res
+            table = Path(res['table'])
+        plan = make(read_verdict_table(table), budget)
+        if 'error' in plan:
+            return plan
+        plan['source'] = shown(table)
+        plan['plan_table'] = shown(write_plan_csv(plan, table.parent / 'dft_plan.csv'))
+        inputs = {it['id']: table.parent / it['id'] / 'orca_optts.inp' for it in plan['plan'] if it['action'] == 'run_dft'}
+        plan['orca_inputs'] = {i: shown(p) for i, p in inputs.items() if p.is_file()}
+        missing = [i for i, p in inputs.items() if not p.is_file()]
+        if missing:
+            plan['caveats'].append('No ORCA input was found for: ' + ', '.join(missing) + '. `tsso batch` writes one for '
+                                   'every "check with DFT" reaction; for others use `tsso check --orca`.')
+        if evaluate or target_error_rate is not None:
+            plan['caveats'].append('evaluate and target_error_rate apply to the benchmark only: your reactions have no '
+                                   'reference TS here, and certified trust needs a calibration set (tsso.certify).')
+    else:
+        rows, truth = _benchmark_rows()
+        if rows is None:
+            return {'error': 'results/triage.csv is missing; run scripts/triage_all.py first'}
+        everything = list(rows)
+        if reaction_ids:
+            want = {str(int(i)) for i in reaction_ids}
+            rows = [r for r in rows if r['id'] in want]
+            unknown = sorted(want - {r['id'] for r in rows})
+            if unknown:
+                return {'error': 'not in the 1,194-reaction RDB7 test set: ' + ', '.join(unknown[:10])}
+        elif sample:
+            if not 2 <= int(sample) <= len(rows):
+                return {'error': f'sample must be between 2 and {len(rows)}'}
+            pick = np.random.default_rng(int(seed)).choice(len(rows), int(sample), replace=False)
+            rows = [rows[k] for k in sorted(pick)]
+        cal = None
+        if target_error_rate is not None:
+            used = {r['id'] for r in rows}
+            rest = [r for r in everything if r['id'] not in used]
+            cal = {'verdict': [r['verdict'] for r in rest], 'disagreement_A': [r['disagreement_A'] for r in rest],
+                   'wrong': [truth[r['id']]['geometry_wrong'] for r in rest]}
+        plan = make(rows, budget, cal, target_error_rate if target_error_rate is not None else 0.05)
+        if 'error' in plan:
+            return plan
+        plan['source'] = f'RDB7 benchmark: {len(rows)} test reactions, 8 GoFlow guesses each'
+        if evaluate:
+            plan['reference_check'] = score_plan(plan, truth)
+    plan['in_plain_words'] = explain_plan(plan)
+    return plan
+
+
+def plan_evidence():
+    """How the planning rule did against reference TSs on RDB7 (results/plan_evaluation.json)."""
+    f = results_file('plan_evaluation.json')
+    if f is None:
+        return {'error': 'results/plan_evaluation.json is missing; run scripts/plan_evaluation.py'}
+    return json.load(open(f))
+
+
 def certify_trust(target_error_rate=0.05, count='geometry', seed=0, limit=30):
     """Certified trust on the RDB7 test set: calibrate on a random half, certify the other half (conformal selection)."""
     from .certify import certify, trust_score

@@ -571,6 +571,144 @@ def _(cert, count, mo, target):
 
 @app.cell
 def _(ROOT, json, mo):
+    plan_demo = json.load(open(ROOT / 'results' / 'plan_demo.json'))['reactions']
+    plan_ev = json.load(open(ROOT / 'results' / 'plan_evaluation.json'))
+    plan_source = mo.ui.radio({'A batch drawn from the benchmark': 'bench',
+                               'My own verdicts.csv (written by tsso batch)': 'own'},
+                              value='A batch drawn from the benchmark', label='Which reactions?')
+    plan_budget = mo.ui.slider(start=0, stop=30, step=1, value=5, label='DFT runs you can afford', show_value=True)
+    plan_n = mo.ui.slider(start=10, stop=200, step=10, value=40, label='Reactions in the batch', show_value=True)
+    plan_draw = mo.ui.button(value=0, on_click=lambda v: v + 1, label='Draw another batch')
+    plan_file = mo.ui.file(filetypes=['.csv'], label='verdicts.csv')
+    plan_reveal = mo.ui.switch(label='Show what the reference TS says about this plan (benchmark only; never used to make it)',
+                               value=False)
+    mo.vstack([mo.md('## 3b · Where should the DFT go?'),
+               mo.md('You have many reactions and only a few DFT runs. Set the budget and get a plan: which reactions to '
+                     'run, which to trust, which to hold back and which to re-generate. The plan is a fixed rule, not an '
+                     'AI judgement: the same reactions and budget always give the same plan.'),
+               plan_source])
+    return plan_budget, plan_demo, plan_draw, plan_ev, plan_file, plan_n, plan_reveal, plan_source
+
+
+@app.cell
+def _(mo, plan_budget, plan_draw, plan_file, plan_n, plan_source):
+    _own = mo.vstack([plan_file,
+                      mo.md("<span style='color:#55534e;font-size:12px'>Make it with <code>tsso batch my_reactions/</code> "
+                            "(see “Check your own reaction” for the file layout). Only the table is read here: ids, "
+                            "verdicts and disagreement values, no structures.</span>")])
+    mo.hstack([plan_budget] + ([_own] if plan_source.value == 'own' else [plan_n, plan_draw]), justify='start', gap=2)
+    return
+
+
+@app.cell
+def _(mo, np, plan_budget, plan_demo, plan_draw, plan_ev, plan_file, plan_n, plan_reveal, plan_source):
+    from tsso.plan import (plan_dft_budget as _make, explain_plan as _explain, rows_from_csv_text as _read,
+                           table_rows as _table, tiles_html as _tiles)
+    _KEEP = ('id', 'verdict', 'disagreement_A', 'mirror_repaired', 'rules_broken', 'error')
+    if plan_source.value == 'own':
+        mo.stop(not plan_file.value, mo.callout(mo.md('Add your `verdicts.csv` to see a plan for your own reactions.'), kind='info'))
+        _picked = _read(plan_file.contents().decode('utf-8-sig', errors='replace'))
+        plan_truth = None
+    else:
+        _idx = np.random.default_rng(plan_draw.value + 1).choice(len(plan_demo), plan_n.value, replace=False)
+        _picked = [plan_demo[_k] for _k in sorted(_idx)]
+        plan_truth = {_r['id']: _r for _r in _picked}
+    plan_rows = [{_k: _r.get(_k) for _k in _KEEP} for _r in _picked]      # the reference columns stop here
+    plan_now = _make(plan_rows, plan_budget.value)
+    mo.stop('error' in plan_now, mo.callout(mo.md(f"**Could not make a plan.** {plan_now.get('error')}"), kind='danger'))
+    _b40 = next(_x for _x in plan_ev['B_batches'] if _x['batch_size'] == 40)
+    _parts = [mo.Html(_tiles(plan_now)),
+              mo.callout(mo.md('**In plain words** (written by a template from the plan, not by an AI): ' + _explain(plan_now)),
+                         kind='neutral'),
+              mo.ui.table(_table(plan_now, plan_truth if plan_reveal.value else None), selection=None, page_size=8)]
+    if plan_truth is not None:
+        _parts.append(plan_reveal)
+        if plan_reveal.value:
+            _run = [_i['id'] for _i in plan_now['plan'] if _i['action'] == 'run_dft']
+            _tru = [_i['id'] for _i in plan_now['plan'] if _i['action'] == 'trust']
+            _can = [_i['id'] for _i in plan_now['plan'] if _i['action'] in ('run_dft', 'trust', 'hold')]
+            _hit = sum(plan_truth[_i]['geometry_wrong'] for _i in _run)
+            _rand = len(_run) * sum(plan_truth[_i]['geometry_wrong'] for _i in _can) / max(len(_can), 1)
+            _missed = sum(plan_truth[_i]['geometry_wrong'] for _i in _tru)
+            _parts.append(mo.callout(mo.md(
+                f"**Against the reference TS, for this batch:** {_hit} of the {len(_run)} reactions picked for DFT really "
+                f"had a wrong geometry (D-MAE above 0.2 Å); picking {len(_run)} at random would find {_rand:.1f} on "
+                f"average. Among the {len(_tru)} trusted reactions, {_missed} had a wrong geometry: errors this plan "
+                f"cannot find, because the models agreed on them."), kind='info'))
+    _parts.append(mo.md(
+        f"<span style='color:#55534e;font-size:12px'><b>How well does the rule work?</b> Tested afterwards against the RDB7 "
+        f"reference TSs (GoFlow guesses): in {_b40['draws']:,} random batches of 40 reactions with 5 runs, "
+        f"{_b40['mean_wrong_among_picked']} of the 5 picks had a wrong geometry on average, against "
+        f"{_b40['mean_if_picked_at_random']} when picking at random and {_b40['mean_with_perfect_order']} with a perfect "
+        f"order; in {100 * _b40['share_of_batches_where_no_pick_was_wrong']:.0f}% of batches no pick was wrong. One "
+        f"generator and one dataset, so check the order on reactions you know before relying on it elsewhere "
+        f"(results/plan_evaluation.json). After each run, confirm the TS with a reaction-path (IRC) calculation: in the "
+        f"GFN2-xTB tests here, {sum(_v['one_imaginary_frequency_but_not_the_reference_ts'] for _v in plan_ev['E_what_the_runs_return']['gfn2_xtb']['by_verdict'].values())} "
+        f"of {sum(_v['one_imaginary_frequency'] for _v in plan_ev['E_what_the_runs_return']['gfn2_xtb']['by_verdict'].values())} "
+        f"optimisations that ended with one imaginary frequency were not the reference TS.</span>"))
+    _csv = 'id,action,dft_order,verdict,disagreement_A,why\n' + '\n'.join(
+        f"{_i['id']},{_i['action']},{_i['dft_order'] or ''},{_i['verdict'] or ''},"
+        f"{'' if _i['disagreement_A'] is None else _i['disagreement_A']},\"{_i['why'].replace(chr(34), chr(39))}\""
+        for _i in plan_now['plan']) + '\n'
+    _parts.append(mo.download(data=_csv.encode(), filename='dft_plan.csv', label='Download the plan (.csv)'))
+    mo.vstack(_parts)
+    return plan_now, plan_rows
+
+
+@app.cell
+def _(IN_BROWSER, api_key, mo, plan_ev, plan_now, plan_rows):
+    import os as _os
+    from tsso import agent as _agent
+    _key = api_key.value.strip() or ('' if IN_BROWSER else _os.environ.get('ANTHROPIC_API_KEY', ''))
+    _tools = _agent.batch_tools(plan_rows, plan_ev)
+    _turns = []                                   # plain-text history of this chat; it restarts when the batch changes
+
+    async def _ask(messages, config):
+        _q = str(messages[-1].content)
+        try:
+            if IN_BROWSER:
+                from pyodide.http import pyfetch as _fetch
+                _out = await _agent.run_async(_q, _agent.fetch_sender(_key, _fetch), _tools, list(_turns))
+            else:
+                import asyncio as _aio
+                _out = await _aio.to_thread(_agent.run, _q, _agent.http_sender(_key), _tools, list(_turns))
+        except Exception as _e:
+            return f'Could not ask Claude: {_e}'
+        _turns.extend([{'role': 'user', 'content': _q}, {'role': 'assistant', 'content': _out['answer'] or ''}])
+        _calls = ', '.join(f"`{_s['tool']}({', '.join(f'{_k}={_v}' for _k, _v in _s['input'].items())})`" for _s in _out['steps'])
+        _trace = ('Tools used: ' + _calls + '.') if _calls else 'No tool was used for this answer, so treat any number in it as unchecked.'
+        _bad = _out['numbers_not_from_tools']
+        _trace += (' Numbers not found in any tool result (check them): ' + ', '.join(_bad) + '.') if _bad else \
+            (' Every number above appears in a tool result or in your question.' if _calls else '')
+        return mo.md((_out['answer'] or '(no answer)') + f"\n\n<span style='color:#55534e;font-size:12px'>{_trace}</span>")
+
+    _rules = mo.accordion({'What the agent can and cannot do': mo.md(
+        '- **It cannot choose the reactions.** It calls the same fixed planning rule you see above (for this batch and '
+        'any budget you ask about) and a tool that returns the benchmark evidence. Nothing else.\n'
+        '- **It does not see structures or reference answers.** Only ids, verdicts, rule names and disagreement values '
+        'reach it; coordinates and SMILES are removed.\n'
+        '- **Its numbers are traced.** Under each answer you see which tools it called and any number that is in no '
+        'tool result. A traced number can still sit in a wrong sentence, so read the plan above as the record.\n'
+        '- Claude is a language model and can be wrong. The plan and the plain-words summary above are made without it.')})
+    _note = mo.md("<span style='color:#55534e;font-size:12px'>Uses your own Anthropic API key. " +
+                  ('It stays in this browser tab and is sent only to api.anthropic.com. ' if IN_BROWSER else
+                   'You can also set ANTHROPIC_API_KEY before starting the app, or run <code>tsso agent "your question"</code>. ') +
+                  'Without a key nothing is missing from the plan above.</span>')
+    if _key:
+        _body = [mo.ui.chat(_ask, prompts=['Explain this plan to someone new to the project.',
+                                           'What changes if I can afford 10 DFT runs?',
+                                           'How do you know the most disputed reactions are the right ones to check?',
+                                           'What can this plan not tell me?']), _rules]
+    else:
+        _body = [mo.md('Ask questions about this plan in your own words. Claude calls the planning rule and explains the '
+                       'result; it does not make the plan. The chat starts again when you change the batch or the budget.'),
+                 api_key, _note, _rules]
+    mo.vstack([mo.md('### Ask the planning agent')] + _body)
+    return
+
+
+@app.cell
+def _(ROOT, json, mo):
     _rows = json.load(open(ROOT / 'results' / 'leaderboard.json'))['rows']
     _pc = lambda v: f'{100 * v:.1f}%'
     _td = "style='padding:6px 8px;border-bottom:1px solid #e3e2de;text-align:{}'"

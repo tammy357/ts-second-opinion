@@ -201,6 +201,29 @@ review cut-off for "check with DFT" was calibrated on GoFlow; for another genera
 [`examples/batch`](https://github.com/tammy357/ts-second-opinion/tree/main/examples/batch) has four reactions laid out this way (one of each verdict) and a matching CSV:
 try `tsso batch examples/batch`.
 
+### Plan a DFT budget
+
+You have many reactions and only a few DFT runs. Say how many, and get a plan:
+
+```bash
+tsso plan tsso_batch --budget 5          # your own reactions: the folder `tsso batch` wrote; adds dft_plan.csv
+tsso plan --budget 5 --sample 40 --evaluate    # try it on 40 benchmark reactions and see how the picks did
+```
+
+The plan is a fixed rule, not an AI judgement: re-generate what still breaks a rule, give the runs to the reactions
+whose guesses disagree most, hold the other "check with DFT" reactions (not verified, so not to be used as they are),
+and trust the rest. The same reactions and budget always give the same plan. Tested afterwards against the RDB7
+reference TSs, in random batches of 40 reactions with 5 runs, 2.25 of the 5 picks had a wrong geometry on
+average, against 0.58 when picking at random and 3.98 with a perfect order
+([details and limits](https://github.com/tammy357/ts-second-opinion/blob/main/docs/RESULTS.md#where-should-the-dft-go-testing-the-budget-plan)).
+That is one generator and one dataset: check the order on reactions you know before relying on it elsewhere. After
+each run, confirm the TS with a reaction-path (IRC) calculation; one imaginary frequency is not enough.
+
+`tsso agent "I have 40 reactions and 5 DFT runs, where should they go?"` (needs `ANTHROPIC_API_KEY`) lets you ask in
+your own words. Claude calls the planning rule and explains the result; it cannot choose the reactions, it is not
+sent coordinates or SMILES, and any number in its answer that is in no tool result is listed under the answer. The
+app has the same planner and chat (section 3b).
+
 ### From Python
 
 ```python
@@ -218,7 +241,8 @@ print(result["verdict"], result["reasons"], result["smiles"])     # pass a mappe
   without overclaiming. In a clone, run `claude` here, approve the server, and try `/second-opinion 3509` or
   `/new-rule "A transferred hydrogen sits roughly on the line between donor and acceptor."`.
 - **Tools** include `triage_structures` (one reaction; the SMILES is optional), `triage_batch` (a folder or CSV),
-  `evaluate_predictions`, `certify_trust`, `gate_check` and `save_rule`.
+  `plan_dft_budget` (where a fixed number of DFT runs should go) with `plan_evidence`, `evaluate_predictions`,
+  `certify_trust`, `gate_check` and `save_rule`.
 
 ### Was this verdict right?
 
@@ -314,6 +338,7 @@ python scripts/evaluate.py               # -> results/metrics.json
 python scripts/triage_all.py 0.2         # verdicts for all 1,194 reactions -> results/triage.csv
 python scripts/benchmark.py              # mirror blindness, handedness split, risk-coverage -> results/benchmark.json
 python scripts/certify.py                # certified trust -> results/certify.json
+python scripts/plan_evaluation.py        # the DFT budget plan against the reference TSs -> results/plan_evaluation.json
 python scripts/leaderboard.py            # stereo-aware leaderboard -> results/leaderboard.md
 python scripts/ablation_authors.py       # Claude-written vs directly written checks -> results/ablation_authors.json
 python scripts/build_benchmark.py        # benchmark/ data files

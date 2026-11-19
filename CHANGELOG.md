@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- **Plan a DFT budget.** `tsso plan <verdicts> --budget N` (MCP tools `plan_dft_budget` and `plan_evidence`; app section
+  3b) says which reactions get a DFT run, which to trust, which to hold and which to re-generate. A fixed rule with no
+  language model in it. Tested against the RDB7 reference TSs (`scripts/plan_evaluation.py`): in random batches of 40
+  reactions with 5 runs, 2.25 of the 5 picks had a wrong geometry on average, against 0.58 at random and 3.98 with a
+  perfect order. RESULTS.md lists what the plan does not do.
+- **A planning agent.** `tsso agent "<question>"` and a chat in the app let you ask for a plan in your own words (your
+  own Anthropic API key). Claude can only call the planning rule, is not sent coordinates or SMILES, and numbers in its
+  answer that are in no tool result are listed under it.
+
 ## 0.3.0 (2026-11-19)
 
 - **Check a reaction from three `.xyz` files, no SMILES needed.** Without an atom-mapped SMILES, bonds, bond orders and
