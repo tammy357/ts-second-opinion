@@ -27,8 +27,8 @@ near the top of README.md).
 
 1. Set the same version in `pyproject.toml`, `tsso/__init__.py`, both `version` fields of `server.json` and
    `CITATION.cff`, and add a section to `CHANGELOG.md`. The workflow stops if the numbers disagree.
-2. Merge to `main`, tag it (`git tag v0.3.0 && git push origin v0.3.0`), then on GitHub open **Releases → Draft a new
-   release**, choose the tag and press **Publish release**.
+2. Merge to `main`, then on GitHub open **Releases → Draft a new release**, type the tag (for example `v0.3.0`; GitHub
+   creates it from `main` when you publish), add the CHANGELOG section as the notes and press **Publish release**.
 3. Watch the run under **Actions → publish**. When it is green:
    - `pip install ts-second-opinion` installs it, and `uvx ts-second-opinion` starts the MCP server;
    - the server is listed at `https://registry.modelcontextprotocol.io/v0/servers?search=ts-second-opinion`.
