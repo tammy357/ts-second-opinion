@@ -175,17 +175,26 @@ const dark = () => getComputedStyle(document.documentElement).getPropertyValue('
  [pc(D.stats.trusted5), 'of reactions trusted at a 5% target geometry-error rate, on average (if new reactions resemble the calibration set)']].forEach(([v, l]) => {
   const t = el('div', 'tile'); t.append(el('div', 'v', v), el('div', 'l', l)); $('tiles').append(t); });
 
-// viewers
-const V1 = $3Dmol.createViewer('v1', {backgroundColor: dark() || 'white'});
-const V2 = $3Dmol.createViewer('v2', {backgroundColor: dark() || 'white'});
-if (V1.linkViewer) { V1.linkViewer(V2); V2.linkViewer(V1); }
+// viewers: 3D needs WebGL; where a browser has it turned off, say so and keep the rest of the page working
+function viewer(id) {
+  try { const v = $3Dmol.createViewer(id, {backgroundColor: dark() || 'white'}); if (v) return v; } catch (err) {}
+  const msg = el('p', 'muted', '3D view unavailable: WebGL is turned off in this browser. The verdict, reasons and report card are unaffected.');
+  msg.style.cssText = 'padding:24px; margin:0;';
+  $(id).replaceChildren(msg);
+  return null;
+}
+const V1 = viewer('v1'), V2 = viewer('v2');
+try { if (V1 && V2 && V1.linkViewer) { V1.linkViewer(V2); V2.linkViewer(V1); } } catch (err) {}
 function draw(v, xyz, cs, ref) {
-  v.removeAllModels(); v.removeAllShapes(); v.removeAllLabels();
-  v.addModel(xyz, 'xyz'); v.setStyle({model: 0}, {stick: {radius: 0.12}, sphere: {scale: 0.2}});
-  if (ref) { v.addModel(ref, 'xyz'); v.setStyle({model: 1}, {stick: {radius: 0.06, color: '#eb6834', opacity: 0.75}}); }
-  for (const c of cs) { v.addSphere({center: c.pos, radius: 0.6, color: c.color, opacity: 0.45});
-    v.addLabel(c.text, {position: c.pos, backgroundColor: c.color, fontColor: 'white', fontSize: 12, backgroundOpacity: 0.9}); }
-  v.zoomTo(); v.zoom(1.5); v.render();
+  if (!v) return;
+  try {
+    v.removeAllModels(); v.removeAllShapes(); v.removeAllLabels();
+    v.addModel(xyz, 'xyz'); v.setStyle({model: 0}, {stick: {radius: 0.12}, sphere: {scale: 0.2}});
+    if (ref) { v.addModel(ref, 'xyz'); v.setStyle({model: 1}, {stick: {radius: 0.06, color: '#eb6834', opacity: 0.75}}); }
+    for (const c of cs) { v.addSphere({center: c.pos, radius: 0.6, color: c.color, opacity: 0.45});
+      v.addLabel(c.text, {position: c.pos, backgroundColor: c.color, fontColor: 'white', fontSize: 12, backgroundOpacity: 0.9}); }
+    v.zoomTo(); v.zoom(1.5); v.render();
+  } catch (err) { console.warn('3D view failed:', err); }
 }
 let cur = 0;
 const mark = ok => ok === true ? ['ok', '✓ right'] : ok === false ? ['bad', '✕ inverted'] : ['muted', 'too flat to judge'];

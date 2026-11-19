@@ -111,17 +111,22 @@ advice, not a substitute for a TS optimisation. Please cite TS Second Opinion, G
 const D = {"raw": "12\n\nN -0.96906 -1.19138 -0.24873\nC 0.03145 -0.50365 -1.05269\nC -0.93526 0.25083 -0.27590\nC 0.13453 0.91285 0.62143\nN 1.09270 -0.04828 1.11072\nC 1.32037 0.05299 -0.31395\nH -0.61707 -1.63007 0.59114\nH 0.03645 -0.68300 -2.12181\nH -1.82690 0.77651 -0.61069\nH -0.03543 1.79087 1.26929\nH 0.66928 -0.94635 1.33322\nH 0.91864 1.34845 -0.21716", "rec": "12\n\nN -0.96906 -1.19138 -0.24873\nC 0.03145 -0.50365 -1.05269\nC -0.93526 0.25083 -0.27590\nC 0.13453 0.91285 0.62143\nN 1.09270 -0.04828 1.11072\nC 1.32037 0.05299 -0.31395\nH -0.61707 -1.63007 0.59114\nH 0.03645 -0.68300 -2.12181\nH -1.82690 0.77651 -0.61069\nH -0.03543 1.79087 1.26929\nH 0.66928 -0.94635 1.33322\nH 0.91864 1.34845 -0.21716", "craw": [{"pos": {"x": 0.031449999660253525, "y": -0.5036500096321106, "z": -1.052690029144287}, "ok": true, "text": "C2"}, {"pos": {"x": -0.935259997844696, "y": 0.2508299946784973, "z": -0.2759000062942505}, "ok": true, "text": "C3"}, {"pos": {"x": 0.031449999660253525, "y": -0.5036500096321106, "z": -1.052690029144287}, "ok": true, "text": "C2"}, {"pos": {"x": -0.935259997844696, "y": 0.2508299946784973, "z": -0.2759000062942505}, "ok": true, "text": "C3"}], "crec": [{"pos": {"x": 0.031449999660253525, "y": -0.5036500096321106, "z": -1.052690029144287}, "ok": true, "text": "C2"}, {"pos": {"x": -0.935259997844696, "y": 0.2508299946784973, "z": -0.2759000062942505}, "ok": true, "text": "C3"}, {"pos": {"x": 0.031449999660253525, "y": -0.5036500096321106, "z": -1.052690029144287}, "ok": true, "text": "C2"}, {"pos": {"x": -0.935259997844696, "y": 0.2508299946784973, "z": -0.2759000062942505}, "ok": true, "text": "C3"}]};
 const dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
 function show(id, xyz, centres) {
-  const v = $3Dmol.createViewer(id, {backgroundColor: dark ? '#1d1d1b' : '#ffffff'});
-  v.addModel(xyz, 'xyz');
-  v.setStyle({}, {stick: {radius: 0.12}, sphere: {scale: 0.2}});
-  for (const c of centres) {
-    const col = c.ok === true ? '#1e8e3e' : c.ok === false ? '#d93025' : '#9aa0a6';
-    v.addSphere({center: c.pos, radius: 0.6, color: col, opacity: 0.45});
-    v.addLabel(c.text, {position: c.pos, backgroundColor: col, fontColor: 'white', fontSize: 12, backgroundOpacity: 0.9});
+  try {                                     // 3D needs WebGL; without it, say so and leave the rest of the card as it is
+    const v = $3Dmol.createViewer(id, {backgroundColor: dark ? '#1d1d1b' : '#ffffff'});
+    v.addModel(xyz, 'xyz');
+    v.setStyle({}, {stick: {radius: 0.12}, sphere: {scale: 0.2}});
+    for (const c of centres) {
+      const col = c.ok === true ? '#1e8e3e' : c.ok === false ? '#d93025' : '#9aa0a6';
+      v.addSphere({center: c.pos, radius: 0.6, color: col, opacity: 0.45});
+      v.addLabel(c.text, {position: c.pos, backgroundColor: col, fontColor: 'white', fontSize: 12, backgroundOpacity: 0.9});
+    }
+    v.zoomTo(); v.zoom(1.5); v.render(); return v;
+  } catch (err) {
+    document.getElementById(id).innerHTML = '<p class="muted" style="padding:24px;margin:0">3D view unavailable: WebGL is turned off in this browser.</p>';
+    return null;
   }
-  v.zoomTo(); v.zoom(1.5); v.render(); return v;
 }
 const a = show('v1', D.raw, D.craw), b = show('v2', D.rec, D.crec);
-if (a.linkViewer) { a.linkViewer(b); b.linkViewer(a); }
+try { if (a && b && a.linkViewer) { a.linkViewer(b); b.linkViewer(a); } } catch (err) {}
 </script>
 </body></html>

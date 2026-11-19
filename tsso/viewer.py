@@ -50,13 +50,18 @@ body {{ margin:0; font:13px system-ui,-apple-system,sans-serif; color:#55534e; b
 <script>{js}</script><script>
 const D = {data};
 function show(id, xyz, cs, ref) {{
-  const v = $3Dmol.createViewer(id, {{backgroundColor: '#ffffff'}});
-  v.addModel(xyz, 'xyz'); v.setStyle({{model: 0}}, {{stick: {{radius: 0.12}}, sphere: {{scale: 0.2}}}});
-  if (ref) {{ v.addModel(ref, 'xyz'); v.setStyle({{model: 1}}, {{stick: {{radius: 0.06, color: '#eb6834', opacity: 0.7}}}}); }}
-  for (const c of cs) {{ v.addSphere({{center: c.pos, radius: 0.6, color: c.color, opacity: 0.45}});
-    v.addLabel(c.text, {{position: c.pos, backgroundColor: c.color, fontColor: 'white', fontSize: 12, backgroundOpacity: 0.9}}); }}
-  v.zoomTo(); v.zoom(1.5); v.render(); return v;
+  try {{
+    const v = $3Dmol.createViewer(id, {{backgroundColor: '#ffffff'}});
+    v.addModel(xyz, 'xyz'); v.setStyle({{model: 0}}, {{stick: {{radius: 0.12}}, sphere: {{scale: 0.2}}}});
+    if (ref) {{ v.addModel(ref, 'xyz'); v.setStyle({{model: 1}}, {{stick: {{radius: 0.06, color: '#eb6834', opacity: 0.7}}}}); }}
+    for (const c of cs) {{ v.addSphere({{center: c.pos, radius: 0.6, color: c.color, opacity: 0.45}});
+      v.addLabel(c.text, {{position: c.pos, backgroundColor: c.color, fontColor: 'white', fontSize: 12, backgroundOpacity: 0.9}}); }}
+    v.zoomTo(); v.zoom(1.5); v.render(); return v;
+  }} catch (err) {{                          // 3D needs WebGL
+    document.getElementById(id).innerHTML = '<p style="padding:24px;margin:0;color:#666">3D view unavailable: WebGL is turned off in this browser.</p>';
+    return null;
+  }}
 }}
 const A = show('a', D.raw, D.craw, null), B = show('b', D.rec, D.crec, D.ref);
-if (A.linkViewer) {{ A.linkViewer(B); B.linkViewer(A); }}
+try {{ if (A && B && A.linkViewer) {{ A.linkViewer(B); B.linkViewer(A); }} }} catch (err) {{}}
 </script></body></html>"""

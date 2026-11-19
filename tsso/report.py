@@ -168,18 +168,23 @@ advice, not a substitute for a TS optimisation. Please cite TS Second Opinion, G
 const D = __DATA__;
 const dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
 function show(id, xyz, centres) {
-  const v = $3Dmol.createViewer(id, {backgroundColor: dark ? '#1d1d1b' : '#ffffff'});
-  v.addModel(xyz, 'xyz');
-  v.setStyle({}, {stick: {radius: 0.12}, sphere: {scale: 0.2}});
-  for (const c of centres) {
-    const col = c.ok === true ? '#1e8e3e' : c.ok === false ? '#d93025' : '#9aa0a6';
-    v.addSphere({center: c.pos, radius: 0.6, color: col, opacity: 0.45});
-    v.addLabel(c.text, {position: c.pos, backgroundColor: col, fontColor: 'white', fontSize: 12, backgroundOpacity: 0.9});
+  try {                                     // 3D needs WebGL; without it, say so and leave the rest of the card as it is
+    const v = $3Dmol.createViewer(id, {backgroundColor: dark ? '#1d1d1b' : '#ffffff'});
+    v.addModel(xyz, 'xyz');
+    v.setStyle({}, {stick: {radius: 0.12}, sphere: {scale: 0.2}});
+    for (const c of centres) {
+      const col = c.ok === true ? '#1e8e3e' : c.ok === false ? '#d93025' : '#9aa0a6';
+      v.addSphere({center: c.pos, radius: 0.6, color: col, opacity: 0.45});
+      v.addLabel(c.text, {position: c.pos, backgroundColor: col, fontColor: 'white', fontSize: 12, backgroundOpacity: 0.9});
+    }
+    v.zoomTo(); v.zoom(1.5); v.render(); return v;
+  } catch (err) {
+    document.getElementById(id).innerHTML = '<p class="muted" style="padding:24px;margin:0">3D view unavailable: WebGL is turned off in this browser.</p>';
+    return null;
   }
-  v.zoomTo(); v.zoom(1.5); v.render(); return v;
 }
 const a = show('v1', D.raw, D.craw), b = show('v2', D.rec, D.crec);
-if (a.linkViewer) { a.linkViewer(b); b.linkViewer(a); }
+try { if (a && b && a.linkViewer) { a.linkViewer(b); b.linkViewer(a); } } catch (err) {}
 </script>
 </body></html>
 """
