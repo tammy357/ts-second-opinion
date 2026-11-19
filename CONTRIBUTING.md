@@ -33,6 +33,20 @@ tsso evaluate predictions.xyz references.xyz reactions.smi --json > my_model.jso
 
 and open a pull request (or an issue using the "Leaderboard entry" template) with the numbers and a link to the model.
 
+## Report a verdict that looks wrong (or right)
+
+Every result has a "Was this verdict right?" link that opens the
+[verdict feedback form](https://github.com/tammy357/ts-second-opinion/issues/new?template=verdict_feedback.yml) with the
+verdict filled in. A DFT TS optimisation or IRC from the recommended guess is the most useful evidence you can add.
+
+## Bring reference transition states from other chemistry
+
+The rules were gated on small gas-phase H/C/N/O molecules (RDB7). Reference TSs from surfaces, organometallics or larger
+molecules, even a few dozen, let us test the rules where they have never been tried (`tsso gate`). Open an issue first
+so we can agree on a format.
+
+See the roadmap in the [README](README.md#roadmap-help-wanted) for other open problems.
+
 ## Ground rules
 
 - Never use the reference TS to make a decision; it is for scoring only.

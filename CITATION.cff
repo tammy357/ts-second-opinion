@@ -4,16 +4,22 @@ title: "TS Second Opinion: checking, repairing and triaging machine-learned tran
 type: software
 authors:
   - name: "TS Second Opinion contributors"
-version: 0.2.0
-date-released: 2026-10-22
+version: 0.3.0
+date-released: 2026-11-19
 license: MIT
 repository-code: "https://github.com/tammy357/ts-second-opinion"
+url: "https://tammy357.github.io/ts-second-opinion/"
+identifiers:
+  - type: doi
+    value: 10.26434/chemrxiv.15011459/v1
+    description: "Preprint describing TS Second Opinion (ChemRxiv)"
 keywords:
   - transition state
   - computational chemistry
   - stereochemistry
   - large language models
   - model context protocol
+  - AI agents
   - conformal prediction
 references:
   - type: article

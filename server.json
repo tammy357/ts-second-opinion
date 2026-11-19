@@ -1,0 +1,23 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.tammy357/ts-second-opinion",
+  "title": "TS Second Opinion",
+  "description": "Second opinion on ML transition-state guesses: trust, check with DFT or re-generate",
+  "version": "0.3.0",
+  "websiteUrl": "https://tammy357.github.io/ts-second-opinion/",
+  "repository": {
+    "url": "https://github.com/tammy357/ts-second-opinion",
+    "source": "github"
+  },
+  "packages": [
+    {
+      "registryType": "pypi",
+      "identifier": "ts-second-opinion",
+      "version": "0.3.0",
+      "runtimeHint": "uvx",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}

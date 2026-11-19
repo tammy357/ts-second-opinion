@@ -2,9 +2,15 @@
 
 - Purpose: decide which machine-learned transition-state (TS) guesses to trust, repair or send to DFT.
 - MCP server: `tsso mcp` (configured in .mcp.json; needs `pip install -e .`). Tools: triage_structures (any reaction, any
-  elements, from xyz text), evaluate_predictions (stereo-aware scoring), certify_trust, list_reactions, triage_reaction,
-  list_rules, get_rule_source, gate_check, save_rule, write_orca_input, benchmark_summary, audit_rdb7_dataset.
-- CLI equivalents: tsso check / evaluate / certify / triage / gate / author / audit. Python: `from tsso import second_opinion`.
+  elements, from xyz text), triage_batch, evaluate_predictions (stereo-aware scoring), certify_trust, list_reactions,
+  triage_reaction, list_rules, get_rule_source, gate_check, save_rule, write_orca_input, benchmark_summary,
+  audit_rdb7_dataset. Agent skill: tsso/skill/SKILL.md (copy in .claude/skills/; keep the two identical).
+- Your own reactions: triage_structures (SMILES optional: without it tsso/infer.py reads bonds, bond orders and
+  stereocentres from the reactant and product geometries; validated in results/geometry_input_validation.json) and
+  triage_batch (a folder of reaction folders, or a CSV). Every result has feedback_url (a pre-filled GitHub form).
+- CLI equivalents: tsso check / batch / evaluate / certify / triage / gate / author / audit; tsso mcp-config and
+  tsso skill --install connect agents. Python: `from tsso import second_opinion` (pass None for the SMILES to infer it).
+- Outside a clone (pip install from git), tsso/paths.py fetches benchmark data on first use and writes to ./tsso_output.
 - Example inputs live in examples/. `tsso check ... --report r.html` writes a one-file HTML report card.
 - The app (apps/demo.py) is verdict-first: examples, upload, linked 3D views, Rule Studio replay, trust slider.
   It also runs in the browser (docs/app, built by scripts/build_wasm.py); there tsso/smiles_lite.py stands in for RDKit.

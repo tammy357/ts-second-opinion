@@ -1,0 +1,74 @@
+name: publish
+# Runs when a GitHub Release is published (not on a plain tag push), or by hand from the Actions tab.
+# One-time setup on PyPI and the steps for each release are in RELEASING.md.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Check that every version number agrees
+        run: |
+          python - <<'EOF'
+          import json, os, re, tomllib
+          versions = {
+              'pyproject.toml': tomllib.load(open('pyproject.toml', 'rb'))['project']['version'],
+              'tsso/__init__.py': re.search(r'__version__ = "([^"]+)"', open('tsso/__init__.py').read()).group(1),
+              'server.json': json.load(open('server.json'))['version'],
+              'server.json package': json.load(open('server.json'))['packages'][0]['version'],
+          }
+          ref = os.environ.get('GITHUB_REF', '')
+          if ref.startswith('refs/tags/v'):
+              versions['release tag'] = ref.removeprefix('refs/tags/v')
+          print(versions)
+          assert len(set(versions.values())) == 1, f'version numbers disagree: {versions}'
+          EOF
+      - run: pip install build twine
+      - run: python -m build
+      - run: twine check dist/*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  pypi:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write          # PyPI trusted publishing: no token is stored anywhere
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
+
+  mcp-registry:
+    needs: pypi
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write          # signs in to the MCP Registry as this GitHub repository
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install mcp-publisher
+        run: |
+          curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz mcp-publisher
+      - name: Wait for the new version to show on PyPI
+        run: |
+          version=$(python3 -c "import json; print(json.load(open('server.json'))['version'])")
+          for i in $(seq 1 30); do
+            curl -sf "https://pypi.org/pypi/ts-second-opinion/$version/json" > /dev/null && exit 0
+            sleep 10
+          done
+          echo "ts-second-opinion $version is not on PyPI yet"; exit 1
+      - run: ./mcp-publisher login github-oidc
+      - run: ./mcp-publisher publish

@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 import numpy as np
 
-DEFAULT = Path(__file__).resolve().parent.parent / 'data' / 'goflow8_rdb7_test.json.gz'
+DEFAULT = Path(__file__).resolve().parent.parent / 'data' / 'goflow8_rdb7_test.json.gz'   # in a clone; see load_reactions
 _ELEMENTS = ('H He Li Be B C N O F Ne Na Mg Al Si P S Cl Ar K Ca Sc Ti V Cr Mn Fe Co Ni Cu Zn Ga Ge As Se Br Kr '
              'Rb Sr Y Zr Nb Mo Tc Ru Rh Pd Ag Cd In Sn Sb Te I Xe Cs Ba La Ce Pr Nd Pm Sm Eu Gd Tb Dy Ho Er Tm Yb '
              'Lu Hf Ta W Re Os Ir Pt Au Hg Tl Pb Bi Po At Rn').split()
@@ -53,7 +53,11 @@ class Reaction:
         return {i: sorted(v) for i, v in nb.items()}
 
 
-def load_reactions(path=DEFAULT):
+def load_reactions(path=None):
+    """The 1,194 RDB7 test reactions with 8 GoFlow guesses each (default), or another export in the same format."""
+    if path is None:
+        from .paths import data_file
+        path = data_file('goflow8_rdb7_test.json.gz')
     with gzip.open(path, 'rt') as fh:
         raw = json.load(fh)
     out = []

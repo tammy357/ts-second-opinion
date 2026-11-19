@@ -17,6 +17,29 @@ jobs:
       - run: python -m pytest -q tests
       - name: Quickstart from the README
         run: |
+          tsso check --reactant examples/rdb7_3509/reactant.xyz --product examples/rdb7_3509/product.xyz \
+                     examples/rdb7_3509/guesses.xyz
           tsso check --smiles examples/rdb7_3509/reaction.smi --reactant examples/rdb7_3509/reactant.xyz \
                      --product examples/rdb7_3509/product.xyz examples/rdb7_3509/guesses.xyz
+          tsso batch examples/batch --out /tmp/tsso_batch && cat /tmp/tsso_batch/verdicts.csv
           tsso evaluate examples/evaluate/predictions.xyz examples/evaluate/references.xyz examples/evaluate/reactions.smi
+
+  installed:
+    # The package as a user gets it: built wheel, fresh environment, run from a folder that is not the repository.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install build && python -m build --wheel
+      - run: python -m venv /tmp/env && /tmp/env/bin/pip install dist/*.whl
+      - name: Use it outside the repository
+        run: |
+          mkdir /tmp/user && cp -r examples/rdb7_3509 examples/batch /tmp/user/ && cd /tmp/user
+          /tmp/env/bin/tsso check --reactant rdb7_3509/reactant.xyz --product rdb7_3509/product.xyz rdb7_3509/guesses.xyz
+          /tmp/env/bin/tsso batch batch --out batch_out && test -f batch_out/verdicts.csv
+          /tmp/env/bin/tsso triage 3509          # fetches the benchmark data on first use
+          /tmp/env/bin/tsso mcp-config --client claude-code
+          /tmp/env/bin/tsso skill --install --project && test -f .claude/skills/ts-second-opinion/SKILL.md
+          /tmp/env/bin/python -c "from tsso.mcp_server import mcp; print('MCP server loads:', mcp.name)"

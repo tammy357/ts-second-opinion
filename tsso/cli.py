@@ -5,14 +5,20 @@
   tsso rules                         list rules and their gate results
   tsso gate "rule text" check.py     test a rule check against 9,540 real TSs
   tsso author "rule text"            let Claude write the check and iterate until the gate accepts it
-  tsso check --smiles "<mapped rxn>" --reactant r.xyz --product p.xyz guesses.xyz
-                                     triage your own reaction from any generator (multi-frame xyz is fine)
+  tsso check --reactant r.xyz --product p.xyz guesses.xyz [--smiles "<mapped rxn>"]
+                                     triage your own reaction from any generator (multi-frame xyz is fine); without
+                                     --smiles, bonds and stereocentres are read from the geometries
+  tsso batch my_reactions/ --out tsso_batch
+                                     triage a folder of reaction folders (or a CSV) into one verdict table
   tsso evaluate preds.xyz refs.xyz reactions.smi
                                      stereo-aware evaluation of any TS generator's test-set predictions
-  tsso certify --target 0.05         certified trust: which guesses to trust at a guaranteed average error rate
+  tsso certify --target 0.05         certified trust: which guesses to trust at a target average error rate
+                                     (the guarantee assumes new reactions resemble the calibration set)
   tsso orca 3509                     write an ORCA TS-optimisation input
   tsso summary                       headline results
-  tsso mcp                           run as an MCP server for agents (Claude Code, Claude Desktop)
+  tsso mcp                           run as an MCP server for agents (Claude Code, Claude Desktop, Cursor)
+  tsso mcp-config [--client ...]     print the settings that connect an agent app to the MCP server
+  tsso skill --install               install the agent skill for Claude Code (~/.claude/skills)
 Add --json to any command for machine-readable output.
 """
 import argparse, json, sys
@@ -29,6 +35,10 @@ def _print(obj, as_json):
     if 'verdict' in obj and 'reasons' in obj:
         who = 'Your reaction' if obj['reaction_id'] == 'yours' else f"Reaction {obj['reaction_id']}"
         print(f"{who}: {ICON[obj['verdict']]}  ({obj['meaning']})")
+        if obj.get('smiles_source', '').startswith('read from'):
+            print(f"  SMILES read from the geometries: {obj['smiles']}")
+            for line in obj.get('inference_notes', [])[1:]:
+                print('  note:', line)
         print(f"  recommended guess: model {obj['chosen_guess']}" + ('  (mirror-repaired)' if obj['mirror_repaired'] else ''))
         for line in obj['reasons']:
             print('  -', line)
@@ -37,6 +47,8 @@ def _print(obj, as_json):
         if 'score_against_reference' in obj:
             s = obj['score_against_reference']
             print(f"  vs reference (evaluation only): D-MAE {s['dmae_A']} A, stereo {'correct' if s['stereo_correct'] else 'WRONG'}")
+        if obj.get('feedback_url'):
+            print(f"  Was this verdict right? Tell us (opens a GitHub form, shares no structures): {obj['feedback_url']}")
         return
     print(json.dumps(obj, indent=2))
 
@@ -54,14 +66,23 @@ def main(argv=None):
     p = sub.add_parser('author'); p.add_argument('rule'); p.add_argument('--name'); p.add_argument('--backend', default='auto')
     p = sub.add_parser('check', help='triage your own reaction')
     p.add_argument('guesses', nargs='*', help='TS guess .xyz files (one or many frames each), or one .json spec')
-    p.add_argument('--smiles', help='atom-mapped reaction SMILES, every atom mapped (or a file containing it)')
+    p.add_argument('--smiles', help='atom-mapped reaction SMILES, every atom mapped (or a file containing it); optional: '
+                                    'without it, bonds and stereocentres are read from the geometries (needs RDKit)')
     p.add_argument('--reactant'); p.add_argument('--product')
+    p.add_argument('--charge', type=int, help='total charge (default: from the SMILES, or 0 without one)')
+    p.add_argument('--multiplicity', type=int, help='spin multiplicity (default: from the SMILES, or 1 without one)')
     p.add_argument('--order', choices=['map', 'smiles'], default='map',
                    help="atoms listed by map number (default) or in SMILES order")
     p.add_argument('--reference', help='reference TS .xyz, to score the result (evaluation only)')
     p.add_argument('--write-xyz', help='write the recommended TS guess here')
     p.add_argument('--orca', help='write an ORCA OptTS+Freq input here (needs --write-xyz)')
     p.add_argument('--report', help='write a single-file HTML report card here')
+    p = sub.add_parser('batch', help='triage a folder of reaction folders, or a CSV, into one verdict table')
+    p.add_argument('source', help='a folder with one sub-folder per reaction, or a .csv (id, reactant, product, guesses)')
+    p.add_argument('--out', default='tsso_batch', help='output folder (default: tsso_batch)')
+    p.add_argument('--charge', type=int, default=0, help='total charge for reactions without a SMILES (default 0)')
+    p.add_argument('--multiplicity', type=int, default=1, help='spin multiplicity for reactions without a SMILES (default 1)')
+    p.add_argument('--reports', action='store_true', help='also write an HTML report card per reaction')
     p = sub.add_parser('evaluate', help='stereo-aware evaluation of any TS generator')
     p.add_argument('predictions'); p.add_argument('references'); p.add_argument('reactions')
     p.add_argument('--order', choices=['map', 'smiles'], default='map'); p.add_argument('--threshold', type=float, default=0.2)
@@ -72,10 +93,24 @@ def main(argv=None):
     sub.add_parser('summary')
     sub.add_parser('audit', help='where RDB7 SMILES and geometries disagree')
     sub.add_parser('mcp')
+    p = sub.add_parser('mcp-config', help='print the settings that connect an agent app to the MCP server')
+    p.add_argument('--client', choices=['claude-desktop', 'cursor', 'claude-code'], default='claude-desktop')
+    p = sub.add_parser('skill', help='show or install the agent skill (SKILL.md) for Claude Code')
+    p.add_argument('--install', action='store_true', help='copy it to ~/.claude/skills/ts-second-opinion/')
+    p.add_argument('--project', action='store_true', help='with --install: copy it to ./.claude/skills/ instead')
     a = ap.parse_args(argv)
     if a.cmd == 'mcp':
         from .mcp_server import main as serve
         return serve()
+    if a.cmd in ('mcp-config', 'skill'):
+        from . import agents
+        if a.cmd == 'mcp-config':
+            print(agents.mcp_settings(a.client))
+        elif a.install:
+            print(f"installed the skill at {agents.install_skill('project' if a.project else 'user')}")
+        else:
+            print(agents.SKILL.read_text())
+        return
     from . import service
     if a.cmd == 'triage':
         res = service.triage_reaction(a.reaction_id, a.score, a.report)
@@ -106,14 +141,16 @@ def main(argv=None):
     elif a.cmd == 'check':
         if len(a.guesses) == 1 and a.guesses[0].endswith('.json'):
             spec = json.loads(Path(a.guesses[0]).read_text())
-            res = service.triage_structures(spec['mapped_reaction_smiles'], spec['reactant_xyz'], spec['product_xyz'],
-                                            spec['guesses_xyz'], spec.get('order', 'map'))
+            res = service.triage_structures(spec.get('mapped_reaction_smiles', ''), spec['reactant_xyz'], spec['product_xyz'],
+                                            spec['guesses_xyz'], spec.get('order', 'map'), spec.get('charge'),
+                                            spec.get('multiplicity'))
         else:
-            if not (a.smiles and a.reactant and a.product and a.guesses):
-                ap.error('check needs --smiles, --reactant, --product and at least one guesses .xyz file')
-            smi = Path(a.smiles).read_text().split()[0] if Path(a.smiles).is_file() else a.smiles
+            if not (a.reactant and a.product and a.guesses):
+                ap.error('check needs --reactant, --product and at least one guesses .xyz file (--smiles is optional)')
+            smi = (Path(a.smiles).read_text().split()[0] if Path(a.smiles).is_file() else a.smiles) if a.smiles else None
             res = service.second_opinion(smi, Path(a.reactant), Path(a.product), [Path(g) for g in a.guesses],
-                                         a.order, Path(a.reference) if a.reference else None, a.report)
+                                         a.order, Path(a.reference) if a.reference else None, a.report,
+                                         charge=a.charge, multiplicity=a.multiplicity)
         if 'error' not in res and a.write_xyz:
             Path(a.write_xyz).write_text(res['recommended_ts_xyz'] + '\n')
             if a.orca:
@@ -126,6 +163,19 @@ def main(argv=None):
             print(f"  wrote {a.write_xyz}" + (f" and {a.orca}" if a.orca else ''))
         if not a.json and res.get('report'):
             print(f"  report card: {res['report']}")
+    elif a.cmd == 'batch':
+        from .batch import triage_batch
+        res = triage_batch(a.source, a.out, a.charge, a.multiplicity, a.reports)
+        if a.json or 'error' in res:
+            _print(res, True)
+        else:
+            v = res['verdicts']
+            print(f"{res['checked']} of {res['reactions']} reactions checked: {v['green']} trust, {v['amber']} check with DFT, "
+                  f"{v['red']} re-generate" + (f"; {res['errors']} could not be checked" if res['errors'] else ''))
+            for row in res['error_rows']:
+                print(f"  ! {row['id']}: {row['error']}")
+            print(f"  verdict table: {res['table']}")
+            print('  ' + res['note'])
     elif a.cmd == 'evaluate':
         res = service.evaluate_files(a.predictions, a.references, a.reactions, a.order, a.threshold)
         if a.json or 'error' in res:

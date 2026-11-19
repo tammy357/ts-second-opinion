@@ -2,7 +2,7 @@
 
 Everything behind the numbers in the [README](../README.md). The main results are retrospective: GoFlow's released predictions for the 1,194 RDB7 test reactions, with rules gated only on the 9,540 training reactions. New DFT transition-state optimisations (16 reactions) and GFN2-xTB ones (106 reactions) test the two central claims with new calculations; see [New DFT calculations](#new-calculations-optimising-the-guesses-with-dft) and [New xTB calculations](#new-calculations-optimising-the-guesses-with-gfn2-xtb). Every number is reproduced by the scripts listed in the README.
 
-**Contents:** [Results on RDB7](#results-on-rdb7) · [New DFT calculations](#new-calculations-optimising-the-guesses-with-dft) · [New xTB calculations](#new-calculations-optimising-the-guesses-with-gfn2-xtb) · [Is it only GoFlow?](#is-it-only-goflow) · [Closest prior work](#closest-prior-work-found-with-valency-mcp-bond) · [Partial flips](#can-partial-flips-be-repaired) · [Data audit](#data-audit-where-rdb7s-smiles-and-geometries-disagree) · [Leaderboard](#full-stereo-aware-leaderboard) · [Limitations](#limitations-in-detail)
+**Contents:** [Results on RDB7](#results-on-rdb7) · [Geometry-only input](#geometry-only-input-reading-the-reaction-from-its-structures) · [New DFT calculations](#new-calculations-optimising-the-guesses-with-dft) · [New xTB calculations](#new-calculations-optimising-the-guesses-with-gfn2-xtb) · [Is it only GoFlow?](#is-it-only-goflow) · [Closest prior work](#closest-prior-work-found-with-valency-mcp-bond) · [Partial flips](#can-partial-flips-be-repaired) · [Data audit](#data-audit-where-rdb7s-smiles-and-geometries-disagree) · [Leaderboard](#full-stereo-aware-leaderboard) · [Limitations](#limitations-in-detail)
 
 ## Results on RDB7
 
@@ -28,7 +28,7 @@ the transition state of a different reaction.
 | **Geometry** | |
 | Final answers with a geometry error: one model → consensus of 8 → after the rules | 14.1% → 11.3% → 11.7% (the rules do not fix geometry) |
 | Geometry errors among reactions marked trust / check with DFT / re-generate (80% / 20% / 0.5% of reactions) | **4.4% / 40% / 67%** |
-| **Certified trust:** reactions trusted at a guaranteed 5% average geometry-error rate | **80%** (actual 4.9%, averaged over 2,000 calibration splits) |
+| **Certified trust:** reactions trusted at a 5% target average geometry-error rate (assumes new reactions resemble the calibration set) | **80%** (actual 4.9%, averaged over 2,000 calibration splits) |
 | **Both kinds together** | |
 | Final answers wrong in either way: one model → TS Second Opinion | 29% → 13%, with no DFT |
 
@@ -87,7 +87,7 @@ risk–coverage curves (how often the answers you choose to trust are wrong):
 For geometry alone, most of the ranking power comes from model disagreement. The large gap in the last two rows comes
 from handedness errors, which a model's disagreement cannot see.
 
-### Certified trust: a guaranteed error rate, not just a score
+### Certified trust: a stated error rate, not just a score
 
 A verdict of "trust" is only useful if you know how often it is wrong. Conformal selection (Jin & Candès, *JMLR* 2023)
 turns the triage into a guarantee. Calibrate on reactions whose answers you know (for example, from earlier DFT). For each new
@@ -273,6 +273,36 @@ not write Python gets a tested check from one sentence. What makes any check tru
   In a quick 5-reaction trial, xTB TS optimisation (Sella) moved 4 guesses further from the DFT TS, so xTB is not a good
   stand-in for the DFT check here (`scripts/xtb_check.py`).
 
+### Geometry-only input: reading the reaction from its structures
+
+Since version 0.3, a reaction can be checked from three `.xyz` files without an atom-mapped SMILES (`tsso/infer.py`).
+Bonds come from interatomic distances (a pair is bonded below a cut-off of 1.13 to 1.30 times the sum of covalent radii,
+depending on the elements, with a valence check that drops the relatively longest contact of an over-bonded atom, as in
+strained cages), bond orders from RDKit's xyz2mol for closed-shell structures, and stereocentres from RDKit's assignment
+from 3D. The cut-offs were chosen on RDB7's 10,734 reactant and product pairs, so this is not an independent test of
+them; it measures how closely the inferred reaction reproduces the dataset's own SMILES.
+
+| On the 1,194 RDB7 test reactions | Same as with the dataset's SMILES |
+|---|---|
+| Bonds, reactant / product | 100.0% / 98.6% |
+| Stereocentres, reactant / product | 99.3% / 97.1% |
+| Verdict | **99.7%** |
+| Recommended guess (same model and same mirror repair) | **98.7%** |
+
+| Final answers, against the reference TS (evaluation only) | With the SMILES | From geometry alone |
+|---|---|---|
+| Wrong handedness | 2.3% | 2.6% |
+| Geometry wrong (D-MAE > 0.2 Å) | 11.7% | 11.6% |
+| Trusted (green) | 79.7% | 79.6% |
+| Wrong among trusted | 6.2% | 6.3% |
+
+The outcome differs in 15 reactions (1 of them flagged by the data audit), and in every one the
+inferred bonds or stereocentres differ from the dataset's SMILES. Bond orders were assigned for
+87.4% of reactions; for the rest (some carbenes and zwitterions, whose RDB7 SMILES are
+charge-separated) every bond is kept single, so the planarity rule has nothing to check there. Exact bond orders match
+the dataset's SMILES for 79.2% of reactions, mostly because of how aromatic and
+charge-separated structures are written. Reproduce with `python scripts/validate_geometry_input.py`.
+
 ## Full stereo-aware leaderboard
 
 | Method | Model size | Test set | D-MAE (Å) | RMSD, mirror allowed (Å) | Success (D-MAE ≤ 0.2 Å) | Correct handedness | **Success with correct handedness** |
@@ -337,8 +367,9 @@ revises and re-tests, then saves it. In our recorded run (`results/agent_new_rul
 rejected 36% of real TSs (it forgot that 1,2- and 1,3-hydrogen shifts are bent); the second passed. The agent then
 reported, honestly, that the rule never fires on GoFlow guesses and adds little. `/second-opinion` triages reactions,
 explains each verdict, writes ORCA inputs for flagged ones, and, if the Valency MCP server is connected, cites related
-ChemRxiv preprints as background reading (`results/agent_second_opinion_transcript.md`; Valency was not connected in
-that recorded run; it worked when we re-ran the command with Valency connected). Reaction 3509 is a good example: all eight GoFlow models put C2 the wrong way round, and the
+ChemRxiv preprints as background reading. In the recorded run (`results/agent_second_opinion_transcript.md`,
+22 October 2026) Valency was connected and supplied the literature steps; the triage steps called the Python functions
+behind the MCP tools directly. Reaction 3509 is a good example: all eight GoFlow models put C2 the wrong way round, and the
 mirror repair gives a guess with D-MAE 0.019 Å and correct stereochemistry.
 
 The same functions are available as a CLI: `tsso check`, `tsso evaluate`, `tsso certify --target 0.05`,

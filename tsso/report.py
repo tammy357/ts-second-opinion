@@ -2,6 +2,7 @@
 the raw and recommended TS guesses, the recommended geometry and an ORCA input. Opens offline in any browser."""
 import datetime, html, json
 from .audit import audit_reaction, describe
+from .feedback import feedback_url
 from pathlib import Path
 
 import numpy as np
@@ -26,9 +27,10 @@ def _mark(status):
             None: '<span class="muted">flat, not judged</span>'}[status]
 
 
-def report_html(rxn, t, checks, charge=0, mult=1, title='Your reaction', score=None):
+def report_html(rxn, t, checks, charge=0, mult=1, title='Your reaction', score=None, notes=None, feedback=None):
     """rxn: tsso.data.Reaction; t: tsso.triage.Triage; checks: {name: compiled check}; score: optional dict from
-    scoring against a reference TS (shown as evaluation only)."""
+    scoring against a reference TS (shown as evaluation only); notes: optional input notes (for example, that the
+    SMILES was read from the geometries); feedback: the 'Was this verdict right?' link (made here if not given)."""
     raw = rxn.preds[t.chosen_model]
     rec = t.xyz
     st_raw, st_rec = stereocentre_status(rxn, raw), stereocentre_status(rxn, rec)
@@ -61,12 +63,17 @@ def report_html(rxn, t, checks, charge=0, mult=1, title='Your reaction', score=N
         score_html = (f'<section><h2>Against the reference TS <span class="tag">evaluation only</span></h2><p>D-MAE '
                       f'{score["dmae_A"]:.3f} Å; stereochemistry {"correct" if score["stereo_correct"] else "wrong"}. '
                       'The reference was not used to make the decision.</p></section>')
+    notes_html = ('<section><h2>Input</h2><ul>' + ''.join(f'<li>{html.escape(n)}</li>' for n in notes) + '</ul></section>'
+                  if notes else '')
+    feedback = feedback or feedback_url(t.verdict, [n for n, _ in t.failed_rules], t.mirrored, len(rxn.preds))
     js = (ASSETS / '3Dmol-min.js').read_text()
     data = json.dumps({'raw': _xyz(rxn.symbols, raw), 'rec': _xyz(rxn.symbols, rec),
                        'craw': centres(st_raw, raw), 'crec': centres(st_rec, rec)})
     page = TEMPLATE
     for k, v in {
-        '__TITLE__': html.escape(title), '__SMILES__': html.escape(rxn.smiles), '__VERDICT__': t.verdict,
+        '__TITLE__': html.escape(title), '__VERDICT__': t.verdict,
+        '__SMILES__': ('SMILES read from the geometries: ' if notes else '') + html.escape(rxn.smiles),
+        '__NOTES__': notes_html, '__FEEDBACK__': html.escape(feedback, quote=True),
         '__ICON__': icon, '__WORD__': word, '__MEANING__': meaning,
         '__FACTS__': ''.join(f'<li>{html.escape(f)}</li>' for f in facts),
         '__REASONS__': ''.join(f'<li>{html.escape(r)}</li>' for r in t.reasons + ['Data check: ' + w for w in describe(audit_reaction(rxn))]),
@@ -128,6 +135,7 @@ footer { color:var(--ink2); font-size:12px; margin-top:20px; }
 <div><div class="word">__WORD__</div><p>__MEANING__</p><ul class="facts">__FACTS__</ul></div></section>
 
 <section><h2>Why</h2><ul>__REASONS__</ul></section>
+__NOTES__
 
 <section><h2>Raw guess and recommended guess <span class="tag">drag to rotate; the two views move together</span></h2>
 <div class="views">
@@ -149,7 +157,8 @@ on your own reference structures with <code>tsso gate</code>.</p></section>
 __SCORE__
 <section><h2>Next step</h2>
 <details><summary>Recommended TS geometry (.xyz)</summary><pre>__RECXYZ__</pre></details>
-<details><summary>ORCA input: ωB97X-D4/def2-TZVP OptTS + Freq</summary><pre>__ORCA__</pre></details></section>
+<details><summary>ORCA input: ωB97X-D4/def2-TZVP OptTS + Freq</summary><pre>__ORCA__</pre></details>
+<p style="margin:12px 0 0"><a href="__FEEDBACK__">Was this verdict right? Tell us</a> <span class="muted">(opens a GitHub issue form; it shares the verdict, never your structures, and nothing is sent until you submit it)</span></p></section>
 
 <footer>TS Second Opinion __VERSION__ · __DATE__ · github.com/tammy357/ts-second-opinion · Results are screening
 advice, not a substitute for a TS optimisation. Please cite TS Second Opinion, GoFlow and RDB7.</footer>

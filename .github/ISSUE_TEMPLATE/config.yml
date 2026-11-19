@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Detailed results and limitations
+    url: https://github.com/tammy357/ts-second-opinion/blob/main/docs/RESULTS.md
+    about: Every number's source, what did not work, and the open questions.

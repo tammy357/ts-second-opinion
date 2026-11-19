@@ -179,16 +179,23 @@ footer { margin-top:56px; color:var(--ink2); font-size:14px; }
 @media (max-width:760px) { .grid2 { grid-template-columns:1fr; } .viewer { height:280px; } }
 </style></head>
 <body><main>
-<div class="kicker">Open Scientific Intelligence Hackathon 2026</div>
+<div class="kicker">Open Scientific Intelligence Hackathon 2026 · Visionary Award</div>
 <h1>TS Second Opinion</h1>
 <p class="lede"><b>Check, repair and triage machine-learned transition-state guesses before you spend DFT.</b>
 About one in six GoFlow guesses has a stereocentre the wrong way round, and most of those are perfect mirror images that pass
 distance scores, chirality-blind RMSD and even a DFT frequency check. This page shows real results; the tool runs on any
-generator's output, with any elements.</p>
+generator's output, with any elements, and installed on your computer all it needs is three <code>.xyz</code> files.</p>
+<div class="card" style="margin:0 0 18px"><b>In plain words.</b> A transition state is the fleeting arrangement of atoms at
+the top of the energy barrier between reactants and products: finding it tells chemists how fast a reaction goes, and each
+one costs hours of quantum-chemistry (DFT) computing. AI models now guess transition states in milliseconds, but molecules
+can be left- or right-handed, like hands, so a guess can have every distance right and still be the mirror image of the true
+one, which describes a different reaction. TS Second Opinion catches those mirror images and other broken guesses, repairs
+the ones it can, and says which guesses to trust before anyone spends DFT on them.</div>
 <div class="links">
   <a class="btn primary" href="app/">Open the live app</a>
   <a class="btn" href="https://youtu.be/zaH6y7H471k">Watch the 4-minute video</a>
   <a class="btn" href="https://github.com/tammy357/ts-second-opinion">Code on GitHub</a>
+  <a class="btn" href="https://doi.org/10.26434/chemrxiv.15011459/v1">Read the preprint</a>
   <a class="btn" href="#examples">Try the examples</a>
   <a class="btn" href="#own">Check your own reaction</a>
   <a class="btn" href="https://github.com/tammy357/ts-second-opinion/blob/main/docs/RESULTS.md">Detailed results</a>
@@ -220,18 +227,21 @@ Drag a molecule to rotate it; the two views move together.</p>
 </div>
 
 <h2 id="own">2 · Check your own reaction</h2>
-<div class="card"><p style="margin-top:0">Any TS generator, any elements. You need an atom-mapped reaction SMILES (every atom mapped),
-the reactant and product as <code>.xyz</code>, and one or more TS guesses.</p>
-<div class="links" style="margin:0 0 12px"><a class="btn primary" href="app/">Upload them in the live app</a></div>
+<div class="card"><p style="margin-top:0">Any TS generator, any elements. Installed on your computer, all you need is the
+reactant, the product and your TS guesses as <code>.xyz</code> files: bonds and stereocentres are read from the geometries,
+which gives the same verdict as the dataset's own SMILES for 99.7% of the 1,194 test reactions. One command, no GPU:</p>
+<pre><code>pip install git+https://github.com/tammy357/ts-second-opinion
+tsso check --reactant r.xyz --product p.xyz guesses.xyz --report report.html
+tsso batch my_reactions/ --out tsso_batch     # many reactions into one verdict table</code></pre>
+<div class="links" style="margin:12px 0"><a class="btn primary" href="app/">Or upload them in the live app</a></div>
 <p class="muted" style="margin-top:0">The live app is a marimo notebook running in your browser with Pyodide: nothing to install,
-and your files never leave your computer. The first load takes a little while, as Python starts in your browser. To install it instead,
-three commands, no GPU:</p>
-<pre><code>git clone https://github.com/tammy357/ts-second-opinion &amp;&amp; cd ts-second-opinion
-pip install -e .
-marimo run apps/demo.py      # the app, with an upload tab
-# or: tsso check --smiles rxn.smi --reactant r.xyz --product p.xyz guesses.xyz --report report.html</code></pre>
-<p class="muted" style="margin-bottom:0">Agents can use it too: it is an MCP server with Claude Code commands
-(<code>/second-opinion</code>, <code>/new-rule</code>).</p></div>
+and your files never leave your computer. The first load takes a little while, as Python starts in your browser, and
+there the atom-mapped SMILES is still needed.</p>
+<p class="muted">Agents can use it too: <code>tsso mcp-config</code> prints the settings for Claude Desktop or Cursor,
+<code>tsso skill --install</code> adds an agent skill to Claude Code, and the MCP tools take one reaction or a whole folder.</p>
+<p class="muted" style="margin-bottom:0"><b>Was a verdict right?</b> Every result links to a pre-filled
+<a href="https://github.com/tammy357/ts-second-opinion/issues/new?template=verdict_feedback.yml">GitHub form</a>; it shares
+the verdict, never your structures.</p></div>
 
 <h2>3 · Rule Studio: plain English in, tested code out</h2>
 <p class="muted">A chemist writes a rule as a sentence. Claude writes the Python, and the gate keeps it only if it accepts at
@@ -265,7 +275,8 @@ Full results and limitations: <a href="https://github.com/tammy357/ts-second-opi
 
 <footer>Built with GoFlow's released predictions (MIT) and RDB7 (Spiekermann, Pattanaik &amp; Green, Sci. Data 2022). Rules
 written by Claude and gated on real data. 3D viewer: 3Dmol.js (BSD-3). Code: MIT licence.
-<a href="https://github.com/tammy357/ts-second-opinion">github.com/tammy357/ts-second-opinion</a></footer>
+<a href="https://github.com/tammy357/ts-second-opinion">github.com/tammy357/ts-second-opinion</a> ·
+<a href="https://github.com/tammy357/ts-second-opinion/issues">questions and ideas welcome</a></footer>
 </main>
 <script src="assets/3Dmol-min.js"></script>
 <script>
@@ -278,7 +289,7 @@ const dark = () => getComputedStyle(document.documentElement).getPropertyValue('
 // tiles
 [[pc(D.stats.caught), 'of wrong-handed GoFlow guesses caught by two LLM-written rules (0.2% false alarms)'],
  [pc(D.stats.hand_before) + ' → ' + pc(D.stats.hand_after), 'final answers with the wrong handedness, before → after checking and mirror repair'],
- [pc(D.stats.trusted5), 'of reactions trusted at a guaranteed 5% average geometry-error rate']].forEach(([v, l]) => {
+ [pc(D.stats.trusted5), 'of reactions trusted at a 5% target geometry-error rate, on average (if new reactions resemble the calibration set)']].forEach(([v, l]) => {
   const t = el('div', 'tile'); t.append(el('div', 'v', v), el('div', 'l', l)); $('tiles').append(t); });
 
 // viewers

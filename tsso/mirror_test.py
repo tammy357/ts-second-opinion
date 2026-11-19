@@ -45,9 +45,9 @@ def compile_metric(source):
 
 def load_pairs():
     from .service import read_xyz_frames
-    bench = ROOT / 'benchmark'
-    mirrored = [f[1] for f in read_xyz_frames((bench / 'mirror_test_references.xyz').read_text())]
-    true = [f[1] for f in read_xyz_frames((bench / 'mirror_test_true_references.xyz').read_text())]
+    from .paths import fetch
+    mirrored = [f[1] for f in read_xyz_frames(fetch('benchmark/mirror_test_references.xyz').read_text())]
+    true = [f[1] for f in read_xyz_frames(fetch('benchmark/mirror_test_true_references.xyz').read_text())]
     return mirrored, true
 
 

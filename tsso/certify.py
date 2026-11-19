@@ -1,4 +1,5 @@
-"""Certified trust: decide which TS guesses to trust with a guaranteed average error rate.
+"""Certified trust: decide which TS guesses to trust at a target average error rate (guaranteed when new
+reactions are drawn like the calibration ones; see below).
 
 This is conformal selection (Jin & Candes, "Selection by prediction with conformal p-values", JMLR 2023) with a
 yes/no label. You need a calibration set: reactions processed the same way whose answers you know (for example

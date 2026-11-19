@@ -1,0 +1,167 @@
+{
+ "reactions": 1194,
+ "inferred": 1194,
+ "inference_failed": [],
+ "agreement": {
+  "reactant_bonds": 1.0,
+  "product_bonds": 0.9858,
+  "bond_orders": 0.7923,
+  "reactant_stereocentres": 0.9933,
+  "product_stereocentres": 0.9707,
+  "verdict": 0.9966,
+  "recommended_guess": 0.9874,
+  "bond_orders_assigned": 0.8744
+ },
+ "counts": {
+  "reactant_bonds": 1194,
+  "product_bonds": 1177,
+  "bond_orders": 946,
+  "reactant_stereocentres": 1186,
+  "product_stereocentres": 1159,
+  "verdict": 1190,
+  "recommended_guess": 1179,
+  "bond_orders_assigned": 1044,
+  "audit_flagged": 10
+ },
+ "final_answers_vs_reference_evaluation_only": {
+  "smiles_route": {
+   "geometry_wrong": 0.1173,
+   "handedness_wrong": 0.0226,
+   "trusted_green": 0.7965,
+   "wrong_among_trusted": 0.062
+  },
+  "geometry_route": {
+   "geometry_wrong": 0.1156,
+   "handedness_wrong": 0.026,
+   "trusted_green": 0.7956,
+   "wrong_among_trusted": 0.0632
+  }
+ },
+ "outcome_differs": {
+  "total": 15,
+  "of_which_audit_flagged": 1,
+  "reactions": [
+   {
+    "reaction_id": 432,
+    "audit_flagged": false,
+    "verdict_smiles_route": "amber",
+    "verdict_geometry_route": "green",
+    "same_bonds": true,
+    "same_stereocentres": false
+   },
+   {
+    "reaction_id": 1188,
+    "audit_flagged": false,
+    "verdict_smiles_route": "green",
+    "verdict_geometry_route": "green",
+    "same_bonds": true,
+    "same_stereocentres": false
+   },
+   {
+    "reaction_id": 5824,
+    "audit_flagged": false,
+    "verdict_smiles_route": "green",
+    "verdict_geometry_route": "amber",
+    "same_bonds": true,
+    "same_stereocentres": false
+   },
+   {
+    "reaction_id": 5839,
+    "audit_flagged": true,
+    "verdict_smiles_route": "green",
+    "verdict_geometry_route": "green",
+    "same_bonds": false,
+    "same_stereocentres": false
+   },
+   {
+    "reaction_id": 6804,
+    "audit_flagged": false,
+    "verdict_smiles_route": "amber",
+    "verdict_geometry_route": "amber",
+    "same_bonds": true,
+    "same_stereocentres": false
+   },
+   {
+    "reaction_id": 7243,
+    "audit_flagged": false,
+    "verdict_smiles_route": "green",
+    "verdict_geometry_route": "green",
+    "same_bonds": true,
+    "same_stereocentres": false
+   },
+   {
+    "reaction_id": 7812,
+    "audit_flagged": false,
+    "verdict_smiles_route": "amber",
+    "verdict_geometry_route": "red",
+    "same_bonds": false,
+    "same_stereocentres": true
+   },
+   {
+    "reaction_id": 8893,
+    "audit_flagged": false,
+    "verdict_smiles_route": "green",
+    "verdict_geometry_route": "green",
+    "same_bonds": true,
+    "same_stereocentres": false
+   },
+   {
+    "reaction_id": 8931,
+    "audit_flagged": false,
+    "verdict_smiles_route": "green",
+    "verdict_geometry_route": "red",
+    "same_bonds": true,
+    "same_stereocentres": false
+   },
+   {
+    "reaction_id": 8973,
+    "audit_flagged": false,
+    "verdict_smiles_route": "green",
+    "verdict_geometry_route": "green",
+    "same_bonds": true,
+    "same_stereocentres": false
+   },
+   {
+    "reaction_id": 10384,
+    "audit_flagged": false,
+    "verdict_smiles_route": "green",
+    "verdict_geometry_route": "green",
+    "same_bonds": true,
+    "same_stereocentres": false
+   },
+   {
+    "reaction_id": 10386,
+    "audit_flagged": false,
+    "verdict_smiles_route": "green",
+    "verdict_geometry_route": "green",
+    "same_bonds": true,
+    "same_stereocentres": false
+   },
+   {
+    "reaction_id": 10621,
+    "audit_flagged": false,
+    "verdict_smiles_route": "green",
+    "verdict_geometry_route": "green",
+    "same_bonds": false,
+    "same_stereocentres": false
+   },
+   {
+    "reaction_id": 11455,
+    "audit_flagged": false,
+    "verdict_smiles_route": "green",
+    "verdict_geometry_route": "green",
+    "same_bonds": true,
+    "same_stereocentres": false
+   },
+   {
+    "reaction_id": 11887,
+    "audit_flagged": false,
+    "verdict_smiles_route": "green",
+    "verdict_geometry_route": "green",
+    "same_bonds": true,
+    "same_stereocentres": false
+   }
+  ]
+ },
+ "meaning": "Share of reactions where the SMILES inferred from the geometries gives the same result as the dataset's own SMILES. audit_flagged reactions have a geometry that contradicts their SMILES, so there the geometry route follows the structures and the SMILES route follows the SMILES."
+}

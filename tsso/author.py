@@ -18,15 +18,14 @@ from .llm import ask, build_prompt, lookup_cached, CHECK_DIR
 from .sandbox import compile_check, run_check
 
 ROOT = Path(__file__).resolve().parent.parent
-TRAIN = ROOT / 'data' / 'rdb7_train_reference.json.gz'
-LOG = ROOT / 'results' / 'authoring_log.jsonl'
 _train = None
 
 
 def train_set():
     global _train
     if _train is None:
-        _train = load_reactions(TRAIN)
+        from .paths import data_file
+        _train = load_reactions(data_file('rdb7_train_reference.json.gz'))
     return _train
 
 
@@ -145,8 +144,10 @@ async def author_async(rule, ask_fn, name=None, max_attempts=3, save_dir=CHECK_D
 
 
 def _log(rule, name, backend, model, attempts, accepted):
-    LOG.parent.mkdir(exist_ok=True)
-    with open(LOG, 'a') as fh:
+    from .paths import output_dir
+    log = output_dir() / 'authoring_log.jsonl'
+    log.parent.mkdir(parents=True, exist_ok=True)
+    with open(log, 'a') as fh:
         fh.write(json.dumps({'time': datetime.datetime.now().isoformat(timespec='seconds'), 'rule': rule, 'name': name,
                              'backend': backend, 'model': model, 'accepted': accepted, 'attempts': attempts}) + '\n')
 

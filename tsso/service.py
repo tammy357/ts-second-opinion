@@ -11,6 +11,8 @@ from .sandbox import compile_check
 from .triage import load_checks, triage, write_xyz, ORCA_TEMPLATE, amber_cutoff_for_budget
 from .gate import GATE_PASS_RATE
 from .audit import audit_reaction, audit_dataset, describe
+from .feedback import feedback_url
+from .paths import data_file, results_file, output_dir, shown
 
 ROOT = Path(__file__).resolve().parent.parent
 RESULTS = ROOT / 'results'
@@ -60,7 +62,8 @@ def _triage_dict(r, t, score=False):
            'rules_broken_by_recommended_guess': [{'rule': n, 'detail': d} for n, d in t.failed_rules],
            'guesses_rejected_by_rules': {str(k + 1): v for k, v in t.rejected_models.items()},
            'reasons': t.reasons,
-           'recommended_ts_xyz': _xyz_text(r.symbols, t.xyz, f'recommended TS guess for reaction {r.id}')}
+           'recommended_ts_xyz': _xyz_text(r.symbols, t.xyz, f'recommended TS guess for reaction {r.id}'),
+           'feedback_url': feedback_url(t.verdict, [n for n, _ in t.failed_rules], t.mirrored, len(r.preds))}
     if score and r.ts_ref_xyz is not None and not np.isnan(r.ts_ref_xyz).any():
         out['score_against_reference'] = {'dmae_A': round(dmae(t.xyz, r.ts_ref_xyz), 4),
                                           'stereo_correct': not _stereo_wrong(r, t.xyz),
@@ -70,8 +73,8 @@ def _triage_dict(r, t, score=False):
 
 # ------------------------------------------------------------------ reactions in the benchmark set
 def list_reactions(verdict=None, mirror_repaired=None, limit=20, offset=0):
-    f = RESULTS / 'triage.csv'
-    rows = list(csv.DictReader(open(f))) if f.exists() else []
+    f = results_file('triage.csv')
+    rows = list(csv.DictReader(open(f))) if f else []
     if verdict:
         rows = [x for x in rows if x['verdict'] == verdict]
     if mirror_repaired is not None:
@@ -205,17 +208,51 @@ def build_reaction(mapped_reaction_smiles, reactant, product, guesses, order='ma
     return r, None
 
 
+def infer_smiles(reactant, product, guesses, charge=0, multiplicity=1):
+    """{'smiles', 'bond_orders', 'notes'} read from the reactant and product geometries (see tsso.infer), or
+    {'error': ...}. The reactant, the product and every guess must list the same atoms in the same order."""
+    from .infer import reaction_smiles_from_geometry
+    try:
+        R, P, G = _frames(reactant), _frames(product), _frames(guesses)
+    except (ValueError, OSError) as e:
+        return {'error': f'could not read the xyz input: {e}'}
+    if not R or not P or not G:
+        return {'error': 'need a reactant, a product and at least one TS guess'}
+    sym = R[0][0]
+    if sym is None or P[0][0] is None:
+        return {'error': 'without a SMILES, give the reactant and product as xyz text or .xyz files, so the elements are known'}
+    for name, (s, x) in [('product', P[0])] + [(f'guess {k + 1}', g) for k, g in enumerate(G)]:
+        if len(x) != len(sym):
+            return {'error': f'{name} has {len(x)} atoms; the reactant has {len(sym)}'}
+        if s is not None and s != sym:
+            return {'error': f'{name} lists its atoms as {"".join(s)} but the reactant as {"".join(sym)}; without a '
+                             f'SMILES, every file must list the same atoms in the same order'}
+    try:
+        return reaction_smiles_from_geometry(sym, R[0][1], P[0][1], charge, multiplicity)
+    except ValueError as e:
+        return {'error': str(e)}
+
+
 def second_opinion(mapped_reaction_smiles, reactant, product, guesses, order='map', score_reference=None, report=None,
-                   title='Your reaction'):
+                   title='Your reaction', charge=None, multiplicity=None):
     """Triage TS guesses for any reaction, from any generator.
 
-    mapped_reaction_smiles: reactants>>products with every atom (hydrogens too) atom-mapped 1..N.
+    mapped_reaction_smiles: reactants>>products with every atom (hydrogens too) atom-mapped 1..N. Optional: give None
+    or '' to read bonds, bond orders and stereocentres from the reactant and product geometries instead (needs RDKit;
+    then every file must list the same atoms in the same order, and the inferred SMILES is returned for checking).
     reactant, product: one structure each; guesses: one or more TS guesses (several enable model disagreement).
-    Each can be xyz text, a path to an .xyz file (multi-frame allowed), or NumPy arrays.
+    Each can be xyz text, a path to an .xyz file (multi-frame allowed), or NumPy arrays (only with a SMILES).
     order: 'map' if atoms are listed by atom-map number (atom i = map number i+1), or 'smiles' if they are
     listed in the order atoms appear in the SMILES (reactant side for the reactant and the guesses).
+    charge, multiplicity: read from the SMILES when given; without a SMILES they default to 0 and 1.
     report: optional path for a single-file HTML report card.
     """
+    inferred = None
+    if not (mapped_reaction_smiles or '').strip():
+        inferred = infer_smiles(reactant, product, guesses, charge or 0, multiplicity or 1)
+        if 'error' in inferred:
+            return {'error': inferred['error']}
+        mapped_reaction_smiles, order = inferred['smiles'], 'map'
     r, err = build_reaction(mapped_reaction_smiles, reactant, product, guesses, order, score_reference)
     if err:
         return {'error': err}
@@ -223,11 +260,23 @@ def second_opinion(mapped_reaction_smiles, reactant, product, guesses, order='ma
     t = triage(r, checks, amber_cutoff())
     out = _triage_dict(r, t, score=score_reference is not None)
     out['reaction_id'] = 'yours'
-    out['charge'], out['multiplicity'] = charge_and_multiplicity(mapped_reaction_smiles)
+    if inferred:
+        out['charge'], out['multiplicity'] = int(charge or 0), int(multiplicity or 1)
+    else:
+        c, m = charge_and_multiplicity(mapped_reaction_smiles)
+        out['charge'] = c if charge is None else int(charge)
+        out['multiplicity'] = m if multiplicity is None else int(multiplicity)
+    out['smiles_source'] = 'read from the reactant and product geometries' if inferred else 'given'
+    if inferred:
+        out['inference_notes'] = inferred['notes']
+        out['bond_orders_assigned'] = inferred['bond_orders']
+    out['feedback_url'] = feedback_url(t.verdict, [n for n, _ in t.failed_rules], t.mirrored, len(r.preds),
+                                       out['smiles_source'])
     if report:
         from .report import write_report
         out['report'] = write_report(report, r, t, checks, out['charge'], out['multiplicity'], title,
-                                     out.get('score_against_reference'))
+                                     out.get('score_against_reference'), notes=inferred['notes'] if inferred else None,
+                                     feedback=out['feedback_url'])
     out['n_guesses'] = len(r.preds)
     out['input_warnings'] = describe(audit_reaction(r))
     out['note'] = ('The review cut-off was calibrated on GoFlow guesses for RDB7. For another generator, compare '
@@ -239,7 +288,7 @@ def audit_rdb7(limit=20):
     """Where RDB7's atom-mapped SMILES and its own reactant/product geometries disagree (see tsso.audit)."""
     from .data import load_reactions
     test = audit_dataset(load_reactions())
-    train = audit_dataset(load_reactions(ROOT / 'data' / 'rdb7_train_reference.json.gz'))
+    train = audit_dataset(load_reactions(data_file('rdb7_train_reference.json.gz')))
     rows = [{'split': s, 'reaction_id': rid, 'issues': iss} for s, part in (('test', test), ('train', train)) for rid, _, iss in part]
     return {'reactions_checked': 10734, 'reactions_flagged': len(rows), 'flagged_test_ids': [rid for rid, _, _ in test],
             'all_on_product_side': all(i['side'] == 'product' for r in rows for i in r['issues']),
@@ -267,9 +316,13 @@ def audit_files(reactions, reactants, products, order='map'):
             'skipped': skipped}
 
 
-def triage_structures(mapped_reaction_smiles, reactant_xyz, product_xyz, guesses_xyz, order='map'):
-    """MCP/CLI wrapper around second_opinion for xyz text."""
-    return second_opinion(mapped_reaction_smiles, reactant_xyz, product_xyz, list(guesses_xyz), order)
+def triage_structures(mapped_reaction_smiles, reactant_xyz, product_xyz, guesses_xyz, order='map', charge=None,
+                      multiplicity=None):
+    """MCP/CLI wrapper around second_opinion for xyz text. mapped_reaction_smiles may be empty (read from geometry)."""
+    if isinstance(guesses_xyz, str):
+        guesses_xyz = [guesses_xyz]
+    return second_opinion(mapped_reaction_smiles, reactant_xyz, product_xyz, list(guesses_xyz or []), order,
+                          charge=charge, multiplicity=multiplicity)
 
 
 def evaluate_files(predictions, references, reactions, order='map', threshold=0.2):
@@ -369,13 +422,12 @@ def write_orca_input(reaction_id):
         return {'error': f'reaction {reaction_id} is not in the test set'}
     t = triage(r, load_checks(), amber_cutoff())
     stem = f'rxn{r.id}_ts_guess'
-    outdir = RESULTS / 'orca_inputs'; outdir.mkdir(parents=True, exist_ok=True)
+    outdir = output_dir() / 'orca_inputs'; outdir.mkdir(parents=True, exist_ok=True)
     src = f'GoFlow seed model {t.chosen_model + 1}' + (' (mirror image)' if t.mirrored else '') + f'; verdict {t.verdict}'
     write_xyz(outdir / f'{stem}.xyz', r.symbols, t.xyz, f'RDB7 {r.id} {r.smiles}')
     inp = ORCA_TEMPLATE.format(rid=f'RDB7 reaction {r.id}', source=src, xyzname=f'{stem}.xyz', charge=0, mult=1)
     (outdir / f'{stem}.inp').write_text(inp)
-    return {'verdict': t.verdict, 'files': [str((outdir / f'{stem}.inp').relative_to(ROOT)),
-                                            str((outdir / f'{stem}.xyz').relative_to(ROOT))], 'orca_input': inp}
+    return {'verdict': t.verdict, 'files': [shown(outdir / f'{stem}.inp'), shown(outdir / f'{stem}.xyz')], 'orca_input': inp}
 
 
 def certify_trust(target_error_rate=0.05, count='geometry', seed=0, limit=30):
@@ -383,8 +435,8 @@ def certify_trust(target_error_rate=0.05, count='geometry', seed=0, limit=30):
     from .certify import certify, trust_score
     if count not in ('geometry', 'geometry_or_handedness'):
         return {'error': "count must be 'geometry' or 'geometry_or_handedness'"}
-    f = RESULTS / 'triage.csv'
-    if not f.exists():
+    f = results_file('triage.csv')
+    if f is None:
         return {'error': 'results/triage.csv is missing; run scripts/triage_all.py first'}
     rows = list(csv.DictReader(open(f)))
     ids = np.array([int(x['reaction_id']) for x in rows])
@@ -401,8 +453,8 @@ def certify_trust(target_error_rate=0.05, count='geometry', seed=0, limit=30):
            'note': ('Guarantee: on average over calibration draws, the share of trusted reactions that are wrong is at most '
                     'the target, if new reactions are drawn like the calibration ones. Recalibrate when the generator, '
                     'the data or the rules change. actual_error_rate_among_trusted uses the reference TS (evaluation only).')}
-    f = RESULTS / 'certify.json'
-    if f.exists():
+    f = results_file('certify.json')
+    if f is not None:
         rep = json.load(open(f))[count]['conformal']
         best = min(rep, key=lambda d: abs(d['target'] - float(target_error_rate)))
         out['over_2000_random_splits'] = best
@@ -412,8 +464,8 @@ def certify_trust(target_error_rate=0.05, count='geometry', seed=0, limit=30):
 def benchmark_summary():
     out = {}
     for name in ('metrics', 'triage_summary', 'benchmark', 'certify', 'generality', 'xtb', 'discovery'):
-        f = RESULTS / f'{name}.json'
-        if f.exists():
+        f = results_file(f'{name}.json')
+        if f is not None:
             out[name] = json.load(open(f))
     m, b, c = out.get('metrics', {}), out.get('benchmark', {}), out.get('certify', {})
     fa = m.get('final_answer', {})

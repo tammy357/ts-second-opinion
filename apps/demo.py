@@ -81,15 +81,16 @@ async def _():
     from tsso.stereo import stereocentre_status
     from tsso.viewer import compare_html
     from tsso.report import report_html
-    from tsso.service import build_reaction
-    from tsso.chem import charge_and_multiplicity
+    from tsso.service import build_reaction, infer_smiles
+    from tsso.chem import charge_and_multiplicity, BACKEND as CHEM_BACKEND
+    from tsso.feedback import feedback_url
     from tsso.geometry import dmae
     from tsso.metrics import handedness_correct
     from tsso.sandbox import run_check
     from tsso.llm import available_backends
-    return (IN_BROWSER, ORCA_TEMPLATE, ROOT, available_backends, build_reaction, charge_and_multiplicity, compare_html,
-            dmae, handedness_correct, json, load_checks, load_reactions, mo, np, report_html, run_check, shutil,
-            stereocentre_status, triage)
+    return (CHEM_BACKEND, IN_BROWSER, ORCA_TEMPLATE, ROOT, available_backends, build_reaction, charge_and_multiplicity,
+            compare_html, dmae, feedback_url, handedness_correct, infer_smiles, json, load_checks, load_reactions, mo, np,
+            report_html, run_check, shutil, stereocentre_status, triage)
 
 
 @app.cell
@@ -136,7 +137,7 @@ def _(cert, metrics, mo):
 
     mo.Html(
         "<div style='padding:4px 0 6px'>"
-        "<div style='font-size:13px;letter-spacing:.05em;text-transform:uppercase;color:#55534e'>Open Scientific Intelligence Hackathon 2026</div>"
+        "<div style='font-size:13px;letter-spacing:.05em;text-transform:uppercase;color:#55534e'>Open Scientific Intelligence Hackathon 2026 · Visionary Award</div>"
         "<h1 style='margin:6px 0 8px;font-size:34px'>TS Second Opinion</h1>"
         "<p style='font-size:17px;margin:0 0 14px;max-width:760px'><b>Check, repair and triage machine-learned transition-state "
         "guesses before you spend DFT.</b> Try an example or upload your own reaction: you get a verdict, the reasons, "
@@ -147,17 +148,25 @@ def _(cert, metrics, mo):
         + _tile(f"{100 * _fa['single_model_avg']['stereo_bad_rate']:.0f}% → {100 * _fa['check_aware_plus_mirror']['stereo_bad_rate']:.0f}%",
                 "final answers with the wrong handedness, before → after checking and mirror repair, with no DFT")
         + _tile(f"{100 * _c5['mean_share_trusted']:.0f}%",
-                f"of reactions trusted at a guaranteed 5% average geometry-error rate (actual {100 * _c5['mean_error_among_trusted']:.1f}%)")
+                f"of reactions trusted at a 5% target geometry-error rate, on average (actual {100 * _c5['mean_error_among_trusted']:.1f}%), "
+                "if new reactions resemble the calibration set")
         + "</div></div>")
     return
 
 
 @app.cell
-def _(EXAMPLES, ROOT, mo):
+def _(CHEM_BACKEND, EXAMPLES, ROOT, mo):
     example = mo.ui.radio(options={v['title']: str(k) for k, v in EXAMPLES.items()},
                           value=next(iter(EXAMPLES.values()))['title'])
+    _can_infer = CHEM_BACKEND == 'rdkit'
     smiles_in = mo.ui.text_area(placeholder='[C:1]([H:4])([H:5])[H:6]...>>...', full_width=True,
-                                label='Atom-mapped reaction SMILES (every atom mapped, hydrogens too)')
+                                label=('Atom-mapped reaction SMILES (optional: leave it empty to read bonds and stereocentres '
+                                       'from the geometries; every file must then list the same atoms in the same order)'
+                                       if _can_infer else
+                                       'Atom-mapped reaction SMILES (every atom mapped, hydrogens too). In the browser it is '
+                                       'needed; installed on your computer, three .xyz files are enough'))
+    charge_in = mo.ui.number(value=0, start=-6, stop=6, step=1, label='Charge (used without a SMILES)')
+    mult_in = mo.ui.number(value=1, start=1, stop=7, step=1, label='Multiplicity (used without a SMILES)')
     reactant_in = mo.ui.file(filetypes=['.xyz'], label='Reactant .xyz')
     product_in = mo.ui.file(filetypes=['.xyz'], label='Product .xyz')
     guesses_in = mo.ui.file(filetypes=['.xyz'], multiple=True, label='TS guess(es) .xyz')
@@ -172,42 +181,57 @@ def _(EXAMPLES, ROOT, mo):
             mo.md('Each case is a real GoFlow prediction (8 models) for a reaction in the RDB7 test set.'), example]),
         'Check your own reaction': mo.vstack([
             mo.md('Works with any TS generator and any elements. Give one or more guesses: several (models, seeds or '
-                  'samples) add the model-disagreement signal. Charge and multiplicity are read from the SMILES.'),
-            smiles_in, mo.hstack([reactant_in, product_in, guesses_in], justify='start'), order_in, check_btn,
+                  'samples) add the model-disagreement signal. With a SMILES, charge and multiplicity are read from it.'),
+            smiles_in, mo.hstack([reactant_in, product_in, guesses_in], justify='start'),
+            mo.hstack([order_in, charge_in, mult_in], justify='start'), check_btn,
             mo.accordion({'No files to hand? Download a ready example and upload it here': _files})]),
     })
     mo.vstack([mo.md('## 1 · Check a TS guess'), mode])
-    return check_btn, example, guesses_in, mode, order_in, product_in, reactant_in, smiles_in
+    return charge_in, check_btn, example, guesses_in, mode, mult_in, order_in, product_in, reactant_in, smiles_in
 
 
 @app.cell
-def _(build_reaction, by_id, charge_and_multiplicity, check_btn, checks, example, guesses_in, mo, mode, order_in,
-      product_in, reactant_in, smiles_in, tri, triage):
+def _(CHEM_BACKEND, build_reaction, by_id, charge_and_multiplicity, charge_in, check_btn, checks, example, guesses_in,
+      infer_smiles, mo, mode, mult_in, order_in, product_in, reactant_in, smiles_in, tri, triage):
     own = mode.value == 'Check your own reaction'
+    inferred = None
     if own:
-        mo.stop(not check_btn.value, mo.callout(mo.md('Add the SMILES and the `.xyz` files, then press '
+        mo.stop(not check_btn.value, mo.callout(mo.md('Add the `.xyz` files (and the SMILES, if you have one), then press '
                                                       '**Check my TS guesses**.'), kind='neutral'))
-        if not (smiles_in.value.strip() and reactant_in.value and product_in.value and guesses_in.value):
-            _rxn, _err = None, 'Please add the SMILES, the reactant, the product and at least one TS guess.'
+        _rxn, _err = None, None
+        if not (reactant_in.value and product_in.value and guesses_in.value):
+            _err = 'Please add the reactant, the product and at least one TS guess.'
         else:
             _txt = lambda _b: _b.decode('utf-8-sig', errors='replace')      # any encoding, with or without a BOM
-            _rxn, _err = build_reaction(smiles_in.value.strip(), _txt(reactant_in.contents()), _txt(product_in.contents()),
-                                        [_txt(f.contents) for f in guesses_in.value], order_in.value)
+            _r, _p = _txt(reactant_in.contents()), _txt(product_in.contents())
+            _g = [_txt(f.contents) for f in guesses_in.value]
+            _smi, _order = smiles_in.value.strip(), order_in.value
+            if not _smi and CHEM_BACKEND != 'rdkit':
+                _err = ('In the browser, please add the atom-mapped SMILES. Installed on your computer '
+                        '(pip install git+https://github.com/tammy357/ts-second-opinion), three .xyz files are enough.')
+            elif not _smi:
+                inferred = infer_smiles(_r, _p, _g, int(charge_in.value), int(mult_in.value))
+                if 'error' in inferred:
+                    _err = inferred['error']
+                else:
+                    _smi, _order = inferred['smiles'], 'map'
+            if _err is None:
+                _rxn, _err = build_reaction(_smi, _r, _p, _g, _order)
         if _err is not None:
             import html as _html
             _msg = _html.escape(_err[0].upper() + _err[1:])
             mo.stop(True, mo.callout(mo.Html(f'<b>Could not check this reaction.</b> {_msg}'), kind='danger'))
         rxn, ex, title = _rxn, None, 'Your reaction'
-        charge, mult = charge_and_multiplicity(rxn.smiles)
+        charge, mult = (int(charge_in.value), int(mult_in.value)) if inferred else charge_and_multiplicity(rxn.smiles)
     else:
         ex = int(example.value)
         rxn, title, charge, mult = by_id[ex], f'RDB7 reaction {ex}', 0, 1
     t = triage(rxn, checks, tri['amber_cutoff_A'])
-    return charge, ex, mult, rxn, t, title
+    return charge, ex, inferred, mult, rxn, t, title
 
 
 @app.cell
-def _(EXAMPLES, charge, ex, mo, mult, np, rxn, t, title):
+def _(EXAMPLES, charge, ex, feedback_url, inferred, mo, mult, np, rxn, t, title):
     _col = {'green': ('#137333', '#e6f4ea', '✓', 'Trust', 'Passes every rule and the models agree.'),
             'amber': ('#9a5b00', '#fdf1dc', '!', 'Check with DFT', 'Passes the rules, but the models disagree a lot.'),
             'red': ('#b3261e', '#fbe9e7', '✕', 'Re-generate', 'Still breaks a rule after repair.')}[t.verdict]
@@ -232,7 +256,16 @@ def _(EXAMPLES, charge, ex, mo, mult, np, rxn, t, title):
         + f"</div>{_note}</div>")
     _box = mo.callout(mo.md('**Data check: the structures disagree with the SMILES.** ' + ' '.join(_warn)
                             + ' The verdict above takes the SMILES at its word.'), kind='warn') if _warn else None
-    mo.vstack([_card, _box]) if _box else _card
+    from html import escape as _escape_attr
+    _inf = mo.callout(mo.md('**SMILES read from the geometries.** Check the bonds it implies; to override it, paste your '
+                            f'own.\n\n`{rxn.smiles}`' + ''.join(f'\n\n{_n}' for _n in inferred['notes'][1:])),
+                      kind='info') if inferred else None
+    _url = feedback_url(t.verdict, [_n for _n, _ in t.failed_rules], t.mirrored, len(rxn.preds),
+                        None if ex else ('read from the reactant and product geometries' if inferred else 'given'))
+    _fb = mo.Html(f"<p style='margin:8px 0 0;font-size:14px'><a href='{_escape_attr(_url, quote=True)}' target='_blank'>"
+                  "Was this verdict right? Tell us</a> <span style='color:#55534e'>(opens a GitHub issue form; it shares "
+                  "the verdict, never your structures)</span></p>")
+    mo.vstack([_x for _x in (_card, _inf, _box, _fb) if _x is not None])
     return
 
 
@@ -871,7 +904,7 @@ def _(ROOT, mo):
               "calculations in section 5. The GoFlow paper notes that D-MAE "
               "misses chirality errors, and FK-Flow (Mark, Galustian, Kovar & Heid, 2025) measured them and fixed them by "
               "steering generation. TS Second Opinion works after generation, on any model's output, and adds repair, a "
-              "statistical guarantee and agent tools. Code: github.com/tammy357/ts-second-opinion (MIT).</span>")])
+              "stated error rate (conformal selection) and agent tools. Code: github.com/tammy357/ts-second-opinion (MIT).</span>")])
     return
 
 

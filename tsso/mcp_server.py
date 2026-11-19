@@ -9,8 +9,11 @@ from . import service
 mcp = FastMCP('ts-second-opinion', instructions=(
     'Checks machine-learned transition-state (TS) guesses before any DFT is spent. Rules are plain-English chemistry '
     'checks turned into Python and kept only if they accept >= 99% of 9,540 real DFT TSs (the gate). '
-    'Typical flow: list_reactions -> triage_reaction -> explain; to add a rule: write a check, call gate_check, '
-    'revise from its feedback, then save_rule. Never use score_against_reference to make decisions; it is for evaluation.'))
+    'For your own reactions: triage_structures (reactant, product and TS guesses as xyz text; the atom-mapped SMILES is '
+    'optional, since bonds and stereocentres can be read from the geometries) or triage_batch (a folder or CSV). '
+    'For the benchmark: list_reactions -> triage_reaction -> explain. To add a rule: write a check, call gate_check, '
+    'revise from its feedback, then save_rule. Never use score_against_reference to make decisions; it is for evaluation. '
+    'Offer feedback_url ("Was this verdict right?") to the person; it opens a GitHub form and shares no structures.'))
 
 
 @mcp.tool()
@@ -30,14 +33,28 @@ def triage_reaction(reaction_id: int, score_against_reference: bool = False) -> 
 
 
 @mcp.tool()
-def triage_structures(mapped_reaction_smiles: str, reactant_xyz: str, product_xyz: str, guesses_xyz: list[str],
-                      order: str = 'map') -> dict:
-    """Triage your own reaction, from any TS generator and with any elements. Give an atom-mapped reaction SMILES
-    with every atom (hydrogens too) mapped 1..N, the reactant and product geometries and one or more TS guesses, as
-    xyz text (multi-frame xyz allowed). order='map' if atoms are listed by atom-map number, 'smiles' if listed in the
-    order they appear in the SMILES. Several guesses enable the model-disagreement signal. Charge and multiplicity
-    are read from the SMILES."""
-    return service.triage_structures(mapped_reaction_smiles, reactant_xyz, product_xyz, guesses_xyz, order)
+def triage_structures(reactant_xyz: str, product_xyz: str, guesses_xyz: list[str], mapped_reaction_smiles: str = '',
+                      order: str = 'map', charge: int | None = None, multiplicity: int | None = None) -> dict:
+    """Triage your own reaction, from any TS generator and with any elements. Give the reactant and product
+    geometries and one or more TS guesses as xyz text (multi-frame xyz allowed); several guesses enable the
+    model-disagreement signal. mapped_reaction_smiles is optional: without it, bonds, bond orders and stereocentres are
+    read from the reactant and product geometries (every file must then list the same atoms in the same order) and
+    the inferred SMILES is returned for checking; charge and multiplicity then default to 0 and 1. With a SMILES
+    (every atom, hydrogens too, mapped 1..N), order='map' if atoms are listed by atom-map number, 'smiles' if listed in
+    the order they appear in the SMILES, and charge and multiplicity are read from it."""
+    return service.triage_structures(mapped_reaction_smiles, reactant_xyz, product_xyz, guesses_xyz, order, charge,
+                                     multiplicity)
+
+
+@mcp.tool()
+def triage_batch(path: str, out_dir: str = 'tsso_batch', charge: int = 0, multiplicity: int = 1,
+                 reports: bool = False) -> dict:
+    """Triage many reactions on disk at once. path: a folder with one sub-folder per reaction (reactant.xyz,
+    product.xyz, the TS guess .xyz files, optional reaction.smi), or a .csv with columns id, reactant, product, guesses
+    (and optional smiles, charge, multiplicity). Writes out_dir/verdicts.csv, the recommended geometry per reaction and
+    ORCA inputs for reactions to check with DFT or re-generate. charge/multiplicity apply to reactions without a SMILES."""
+    from .batch import triage_batch as run
+    return run(path, out_dir, charge, multiplicity, reports)
 
 
 @mcp.tool()

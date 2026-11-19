@@ -1,0 +1,49 @@
+name: Was this verdict right?
+description: Tell us when a verdict looks wrong (or right) for your reaction
+title: "Verdict feedback"
+labels: ["verdict-feedback"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for taking the time. The link in TS Second Opinion fills in the first fields for you. Nothing about
+        your reaction is shared unless you paste it below, and everything in an issue is public.
+  - type: input
+    id: verdict
+    attributes:
+      label: Verdict TS Second Opinion gave
+      placeholder: green (trust), amber (check with DFT) or red (re-generate)
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: What it said
+      description: Rules broken, mirror repair and number of guesses (filled in when you use the link).
+  - type: dropdown
+    id: right
+    attributes:
+      label: Was it right?
+      options:
+        - "Yes"
+        - "No: it trusted a guess that turned out to be wrong"
+        - "No: it flagged a guess that turned out to be fine"
+        - "Not sure yet"
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: How do you know?
+      description: For example, a DFT TS optimisation or IRC from the recommended guess, or a stereocentre you checked by hand.
+  - type: textarea
+    id: structures
+    attributes:
+      label: Structures (optional)
+      description: Paste the reaction SMILES or .xyz files only if you are happy for them to be public.
+      render: text
+  - type: input
+    id: version
+    attributes:
+      label: TS Second Opinion version
+      placeholder: "0.3.0"
