@@ -580,6 +580,11 @@ def _(ROOT, json, mo):
     plan_n = mo.ui.slider(start=10, stop=200, step=10, value=40, label='Reactions in the batch', show_value=True)
     plan_draw = mo.ui.button(value=0, on_click=lambda v: v + 1, label='Draw another batch')
     plan_file = mo.ui.file(filetypes=['.csv'], label='verdicts.csv')
+    plan_goal = mo.ui.radio({'Find the wrong guesses (most disputed first)': 'find_errors',
+                             'Finish as many TSs as possible (least disputed first)': 'finish_ts'},
+                            value='Find the wrong guesses (most disputed first)', label='What are the runs for?')
+    plan_audit = mo.ui.slider(start=0, stop=30, step=1, value=0, show_value=True,
+                              label='Of those, runs for a random audit of trusted reactions')
     plan_reveal = mo.ui.switch(label='Show what the reference TS says about this plan (benchmark only; never used to make it)',
                                value=False)
     mo.vstack([mo.md('## 3b · Where should the DFT go?'),
@@ -587,24 +592,32 @@ def _(ROOT, json, mo):
                      'run, which to trust, which to hold back and which to re-generate. The plan is a fixed rule, not an '
                      'AI judgement: the same reactions and budget always give the same plan.'),
                plan_source])
-    return plan_budget, plan_demo, plan_draw, plan_ev, plan_file, plan_n, plan_reveal, plan_source
+    return (plan_audit, plan_budget, plan_demo, plan_draw, plan_ev, plan_file, plan_goal, plan_n, plan_reveal,
+            plan_source)
 
 
 @app.cell
-def _(mo, plan_budget, plan_draw, plan_file, plan_n, plan_source):
+def _(mo, plan_audit, plan_budget, plan_draw, plan_file, plan_goal, plan_n, plan_source):
     _own = mo.vstack([plan_file,
                       mo.md("<span style='color:#55534e;font-size:12px'>Make it with <code>tsso batch my_reactions/</code> "
                             "(see “Check your own reaction” for the file layout). Only the table is read here: ids, "
                             "verdicts and disagreement values, no structures.</span>")])
-    mo.hstack([plan_budget] + ([_own] if plan_source.value == 'own' else [plan_n, plan_draw]), justify='start', gap=2)
+    mo.vstack([mo.hstack([plan_budget] + ([_own] if plan_source.value == 'own' else [plan_n, plan_draw]), justify='start', gap=2),
+               mo.accordion({'More choices: what the runs are for, and auditing the trusted reactions': mo.vstack([
+                   plan_goal, plan_audit,
+                   mo.md("<span style='color:#55534e;font-size:12px'>Model disagreement cannot see an error that every "
+                         "model makes. A random audit can: it checks trusted reactions drawn by lot, and the outcomes give "
+                         "an exact upper bound on how many of the other trusted reactions are wrong. Few audits give a "
+                         "wide bound, and each one is a run not spent on a doubtful reaction.</span>")])})])
     return
 
 
 @app.cell
-def _(mo, np, plan_budget, plan_demo, plan_draw, plan_ev, plan_file, plan_n, plan_reveal, plan_source):
+def _(mo, np, plan_audit, plan_budget, plan_demo, plan_draw, plan_ev, plan_file, plan_goal, plan_n, plan_reveal,
+      plan_source):
     from tsso.plan import (plan_dft_budget as _make, explain_plan as _explain, rows_from_csv_text as _read,
-                           table_rows as _table, tiles_html as _tiles)
-    _KEEP = ('id', 'verdict', 'disagreement_A', 'mirror_repaired', 'rules_broken', 'error')
+                           table_rows as _table, tiles_html as _tiles, review_results as _review)
+    _KEEP = ('id', 'verdict', 'disagreement_A', 'endpoint_distance_A', 'mirror_repaired', 'rules_broken', 'error')
     if plan_source.value == 'own':
         mo.stop(not plan_file.value, mo.callout(mo.md('Add your `verdicts.csv` to see a plan for your own reactions.'), kind='info'))
         _picked = _read(plan_file.contents().decode('utf-8-sig', errors='replace'))
@@ -614,7 +627,8 @@ def _(mo, np, plan_budget, plan_demo, plan_draw, plan_ev, plan_file, plan_n, pla
         _picked = [plan_demo[_k] for _k in sorted(_idx)]
         plan_truth = {_r['id']: _r for _r in _picked}
     plan_rows = [{_k: _r.get(_k) for _k in _KEEP} for _r in _picked]      # the reference columns stop here
-    plan_now = _make(plan_rows, plan_budget.value)
+    plan_now = _make(plan_rows, plan_budget.value, goal=plan_goal.value, audit=min(plan_audit.value, plan_budget.value),
+                     seed=plan_draw.value)
     mo.stop('error' in plan_now, mo.callout(mo.md(f"**Could not make a plan.** {plan_now.get('error')}"), kind='danger'))
     _b40 = next(_x for _x in plan_ev['B_batches'] if _x['batch_size'] == 40)
     _parts = [mo.Html(_tiles(plan_now)),
@@ -624,7 +638,7 @@ def _(mo, np, plan_budget, plan_demo, plan_draw, plan_ev, plan_file, plan_n, pla
     if plan_truth is not None:
         _parts.append(plan_reveal)
         if plan_reveal.value:
-            _run = [_i['id'] for _i in plan_now['plan'] if _i['action'] == 'run_dft']
+            _run = [_i['id'] for _i in plan_now['plan'] if _i['action'] == 'run_dft' and not _i.get('audit')]
             _tru = [_i['id'] for _i in plan_now['plan'] if _i['action'] == 'trust']
             _can = [_i['id'] for _i in plan_now['plan'] if _i['action'] in ('run_dft', 'trust', 'hold')]
             _hit = sum(plan_truth[_i]['geometry_wrong'] for _i in _run)
@@ -635,6 +649,12 @@ def _(mo, np, plan_budget, plan_demo, plan_draw, plan_ev, plan_file, plan_n, pla
                 f"had a wrong geometry (D-MAE above 0.2 Å); picking {len(_run)} at random would find {_rand:.1f} on "
                 f"average. Among the {len(_tru)} trusted reactions, {_missed} had a wrong geometry: errors this plan "
                 f"cannot find, because the models agreed on them."), kind='info'))
+            if plan_now['audited']:
+                _rev = _review(plan_now, {_i: 'wrong' if plan_truth[_i]['geometry_wrong'] or plan_truth[_i]['handedness_wrong']
+                                          else 'right' for _i in plan_now['run_dft']})['trusted_reactions']
+                _parts.append(mo.callout(mo.md(
+                    f"**What the random audit would have shown:** {_rev['note']} In this batch the true number was "
+                    f"{sum(plan_truth[_i]['geometry_wrong'] or plan_truth[_i]['handedness_wrong'] for _i in _tru)}."), kind='info'))
     _parts.append(mo.md(
         f"<span style='color:#55534e;font-size:12px'><b>How well does the rule work?</b> Tested afterwards against the RDB7 "
         f"reference TSs (GoFlow guesses): in {_b40['draws']:,} random batches of 40 reactions with 5 runs, "
@@ -676,10 +696,8 @@ def _(IN_BROWSER, api_key, mo, plan_ev, plan_now, plan_rows):
             return f'Could not ask Claude: {_e}'
         _turns.extend([{'role': 'user', 'content': _q}, {'role': 'assistant', 'content': _out['answer'] or ''}])
         _calls = ', '.join(f"`{_s['tool']}({', '.join(f'{_k}={_v}' for _k, _v in _s['input'].items())})`" for _s in _out['steps'])
-        _trace = ('Tools used: ' + _calls + '.') if _calls else 'No tool was used for this answer, so treat any number in it as unchecked.'
-        _bad = _out['numbers_not_from_tools']
-        _trace += (' Numbers not found in any tool result (check them): ' + ', '.join(_bad) + '.') if _bad else \
-            (' Every number above appears in a tool result or in your question.' if _calls else '')
+        _trace = ('Tools used: ' + _calls + '.') if _calls else ''
+        _trace += ' ' + _agent.describe_numbers(_out)
         return mo.md((_out['answer'] or '(no answer)') + f"\n\n<span style='color:#55534e;font-size:12px'>{_trace}</span>")
 
     _rules = mo.accordion({'What the agent can and cannot do': mo.md(
@@ -687,8 +705,9 @@ def _(IN_BROWSER, api_key, mo, plan_ev, plan_now, plan_rows):
         'any budget you ask about) and a tool that returns the benchmark evidence. Nothing else.\n'
         '- **It does not see structures or reference answers.** Only ids, verdicts, rule names and disagreement values '
         'reach it; coordinates and SMILES are removed.\n'
-        '- **Its numbers are traced.** Under each answer you see which tools it called and any number that is in no '
-        'tool result. A traced number can still sit in a wrong sentence, so read the plan above as the record.\n'
+        '- **It is told not to type numbers.** It writes a pointer to a field of a tool result, and the program copies '
+        'the value in. Under each answer you see how many values were copied, and every number Claude typed anyway. A '
+        'copied value can still be the wrong field for the sentence, so read the plan above as the record.\n'
         '- Claude is a language model and can be wrong. The plan and the plain-words summary above are made without it.')})
     _note = mo.md("<span style='color:#55534e;font-size:12px'>Uses your own Anthropic API key. " +
                   ('It stays in this browser tab and is sent only to api.anthropic.com. ' if IN_BROWSER else

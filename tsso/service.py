@@ -64,6 +64,8 @@ def _triage_dict(r, t, score=False):
            'reasons': t.reasons,
            'recommended_ts_xyz': _xyz_text(r.symbols, t.xyz, f'recommended TS guess for reaction {r.id}'),
            'feedback_url': feedback_url(t.verdict, [n for n, _ in t.failed_rules], t.mirrored, len(r.preds))}
+    ends = [dmae(t.xyz, e) for e in (r.reactant_xyz, r.product_xyz) if e is not None and np.isfinite(e).all()]
+    out['endpoint_distance_A'] = round(min(ends), 4) if ends else None      # D-MAE to the nearer of reactant and product
     if score and r.ts_ref_xyz is not None and not np.isnan(r.ts_ref_xyz).any():
         out['score_against_reference'] = {'dmae_A': round(dmae(t.xyz, r.ts_ref_xyz), 4),
                                           'stereo_correct': not _stereo_wrong(r, t.xyz),
@@ -447,8 +449,10 @@ def _benchmark_rows():
 def score_plan(plan, truth):
     """What the reference TS says about a plan, by action. For evaluation only: a plan never uses it."""
     out = {}
-    for action in ('run_dft', 'trust', 'hold', 'regenerate'):
-        ids = [it['id'] for it in plan['plan'] if it['action'] == action and it['id'] in truth]
+    aud = {it['id'] for it in plan['plan'] if it.get('audit')}
+    for action in ('run_dft', 'random_audit', 'trust', 'hold', 'regenerate'):
+        ids = [it['id'] for it in plan['plan'] if it['id'] in truth and
+               (it['id'] in aud if action == 'random_audit' else it['action'] == action and it['id'] not in aud)]
         out[action] = {'reactions': len(ids),
                        'geometry_wrong': sum(truth[i]['geometry_wrong'] for i in ids),
                        'handedness_wrong': sum(truth[i]['handedness_wrong'] for i in ids),
@@ -461,18 +465,37 @@ def score_plan(plan, truth):
     return out
 
 
+def _calibration_from_csv(path):
+    """{'verdict', 'disagreement_A', 'wrong'} from a CSV of reactions whose answers you know (same generator, same
+    processing): a verdict table with an extra column `wrong` (true/false)."""
+    from .plan import rows_from_csv_text
+    text = Path(path).read_text(encoding='utf-8-sig')
+    head = text.splitlines()[0].lower() if text.strip() else ''
+    if 'wrong' not in [h.strip() for h in head.split(',')]:
+        raise ValueError('the calibration table needs a column named "wrong" (true or false for each reaction)')
+    rows = rows_from_csv_text(text)
+    wrong = [str(r.get('wrong', '')).strip().lower() in ('true', '1', 'yes') for r in csv.DictReader(text.lstrip('﻿').splitlines())]
+    return {'verdict': [r['verdict'] for r in rows], 'disagreement_A': [r['disagreement_A'] for r in rows], 'wrong': wrong}
+
+
 def plan_dft_budget(budget, path='', reaction_ids=None, sample=None, seed=0, evaluate=False, target_error_rate=None,
-                    out_dir=None):
+                    out_dir=None, goal='find_errors', audit=0, calibration=''):
     """Plan where `budget` DFT runs go (see tsso.plan). Either your own reactions or the RDB7 benchmark.
 
     path: a verdicts.csv written by `tsso batch`, the folder holding it, or a folder / CSV of reactions (triaged first
     into out_dir). Empty: the benchmark, restricted to reaction_ids, or to `sample` reactions drawn with `seed`.
-    evaluate (benchmark only): add what the reference TS says about the picks. target_error_rate (benchmark only): add
-    certified trust, calibrated on the benchmark reactions that are not in the batch.
+    goal: 'find_errors' (most disputed first) or 'finish_ts' (least disputed "check with DFT" reactions first).
+    audit: runs to spend on trusted reactions drawn at random; their outcomes bound the error rate of the rest
+    (review_dft_results). evaluate (benchmark only): add what the reference TS says about the picks.
+    target_error_rate: add certified trust. On the benchmark it is calibrated on the reactions not in the batch; for
+    your own reactions give `calibration`, a verdict table of reactions with known answers and a `wrong` column.
     """
     from .plan import plan_dft_budget as make, read_verdict_table, write_plan_csv, explain_plan
     if isinstance(budget, float) and budget.is_integer():
         budget = int(budget)
+    if isinstance(audit, float) and audit.is_integer():
+        audit = int(audit)
+    target = 0.05 if target_error_rate is None else target_error_rate
     if path:
         src = Path(path)
         table = src / 'verdicts.csv' if src.is_dir() and (src / 'verdicts.csv').is_file() else src
@@ -483,20 +506,44 @@ def plan_dft_budget(budget, path='', reaction_ids=None, sample=None, seed=0, eva
             if 'error' in res:
                 return res
             table = Path(res['table'])
-        plan = make(read_verdict_table(table), budget)
+        cal = None
+        if calibration:
+            try:
+                cal = _calibration_from_csv(calibration)
+            except (OSError, ValueError) as e:
+                return {'error': f'could not read the calibration table: {e}'}
+        rows = read_verdict_table(table)
+        plan = make(rows, budget, cal, target, goal, audit, seed)
         if 'error' in plan:
             return plan
         plan['source'] = shown(table)
         plan['plan_table'] = shown(write_plan_csv(plan, table.parent / 'dft_plan.csv'))
-        inputs = {it['id']: table.parent / it['id'] / 'orca_optts.inp' for it in plan['plan'] if it['action'] == 'run_dft'}
-        plan['orca_inputs'] = {i: shown(p) for i, p in inputs.items() if p.is_file()}
-        missing = [i for i, p in inputs.items() if not p.is_file()]
+        from .irc import ORCA_IRC_TEMPLATE
+        by_id, written, missing = {r['id']: r for r in rows}, {}, []
+        for it in plan['plan']:
+            if it['action'] != 'run_dft':
+                continue
+            folder, r = table.parent / it['id'], by_id[it['id']]
+            if (folder / 'recommended_ts.xyz').is_file() and r.get('charge', '') != '' and r.get('multiplicity', '') != '':
+                (folder / 'orca_optts_irc.inp').write_text(ORCA_IRC_TEMPLATE.format(
+                    rid=it['id'], source=f"verdict {it['verdict']}; DFT run number {it['dft_order']} of the plan",
+                    xyzname='recommended_ts.xyz', charge=int(float(r['charge'])), mult=int(float(r['multiplicity']))))
+                written[it['id']] = shown(folder / 'orca_optts_irc.inp')
+            else:
+                missing.append(it['id'])
+        plan['orca_inputs'] = written
+        if written:
+            plan['caveats'].append('The ORCA inputs run the TS optimisation, the frequencies and the reaction path (IRC) in '
+                                   'one job. They follow the ORCA manual but have not been run by us: try one first. '
+                                   'Then check each result with `tsso irc-check`.')
         if missing:
-            plan['caveats'].append('No ORCA input was found for: ' + ', '.join(missing) + '. `tsso batch` writes one for '
-                                   'every "check with DFT" reaction; for others use `tsso check --orca`.')
-        if evaluate or target_error_rate is not None:
-            plan['caveats'].append('evaluate and target_error_rate apply to the benchmark only: your reactions have no '
-                                   'reference TS here, and certified trust needs a calibration set (tsso.certify).')
+            plan['caveats'].append('No ORCA input was written for: ' + ', '.join(missing) + ' (the recommended geometry, or '
+                                   'the charge and multiplicity columns of a table written by an older `tsso batch`, were not '
+                                   'found). Run `tsso batch` again, or use `tsso check --orca`.')
+        if evaluate or (target_error_rate is not None and not calibration):
+            plan['caveats'].append('evaluate applies to the benchmark only, and certified trust for your own reactions '
+                                   'needs --calibration: a table of reactions with known answers. Without one, the only '
+                                   'error rate this plan can give you comes from random audits (audit > 0).')
     else:
         rows, truth = _benchmark_rows()
         if rows is None:
@@ -519,14 +566,37 @@ def plan_dft_budget(budget, path='', reaction_ids=None, sample=None, seed=0, eva
             rest = [r for r in everything if r['id'] not in used]
             cal = {'verdict': [r['verdict'] for r in rest], 'disagreement_A': [r['disagreement_A'] for r in rest],
                    'wrong': [truth[r['id']]['geometry_wrong'] for r in rest]}
-        plan = make(rows, budget, cal, target_error_rate if target_error_rate is not None else 0.05)
+        plan = make(rows, budget, cal, target, goal, audit, seed)
         if 'error' in plan:
             return plan
         plan['source'] = f'RDB7 benchmark: {len(rows)} test reactions, 8 GoFlow guesses each'
         if evaluate:
             plan['reference_check'] = score_plan(plan, truth)
+            if plan['audited']:
+                from .plan import review_results
+                plan['reference_check']['if_every_run_were_checked_against_the_reference'] = review_results(
+                    plan, {i: 'wrong' if truth[i]['geometry_wrong'] or truth[i]['handedness_wrong'] else 'right'
+                           for i in plan['run_dft']})
     plan['in_plain_words'] = explain_plan(plan)
     return plan
+
+
+def review_dft_results(outcomes, budget, path='', reaction_ids=None, sample=None, seed=0, goal='find_errors', audit=0):
+    """What finished DFT runs say about a plan. Give the same arguments the plan was made with (the plan is rebuilt
+    from them, so nothing has to be stored) and outcomes: {reaction id: 'right' | 'wrong'} for the runs you have,
+    where 'right' means one imaginary frequency and a reaction path that joins this reactant to this product
+    (irc_check). With random audits in the plan, returns an exact upper bound on the error rate of the trusted rest."""
+    from .plan import review_results
+    plan = plan_dft_budget(budget, path, reaction_ids, sample, seed, False, None, None, goal, audit)
+    if 'error' in plan:
+        return plan
+    return review_results(plan, {str(k): v for k, v in dict(outcomes).items()})
+
+
+def irc_check(reactant_xyz, product_xyz, forward_xyz, backward_xyz, mapped_reaction_smiles='', order='map'):
+    """Does a reaction path join this reactant to this product, with the right handedness? See tsso.irc."""
+    from .irc import irc_check as run
+    return run(reactant_xyz, product_xyz, forward_xyz, backward_xyz, mapped_reaction_smiles, order)
 
 
 def plan_evidence():

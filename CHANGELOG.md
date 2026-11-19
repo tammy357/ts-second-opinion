@@ -6,10 +6,23 @@
   3b) says which reactions get a DFT run, which to trust, which to hold and which to re-generate. A fixed rule with no
   language model in it. Tested against the RDB7 reference TSs (`scripts/plan_evaluation.py`): in random batches of 40
   reactions with 5 runs, 2.25 of the 5 picks had a wrong geometry on average, against 0.58 at random and 3.98 with a
-  perfect order. RESULTS.md lists what the plan does not do.
+  perfect order.
+- **Two goals.** `--goal find_errors` (default) or `--goal finish_ts` (the runs most likely to end in a usable TS).
+- **Random audits.** `--audit N` spends N runs on trusted reactions drawn at random, and `--results runs.csv` (MCP tool
+  `review_dft_results`) turns their outcomes into an exact upper bound on the error rate of the other trusted
+  reactions: the only way the plan can see an error that every model shares, and the only error rate it can give for
+  your own reactions without a calibration set (`--calibration` adds certified trust if you have one).
+- **Reaction-path check.** The plan writes ORCA inputs with the IRC included, and `tsso irc-check` (MCP tool `irc_check`)
+  says whether the path joins this reactant to this product with the right handedness. Tested on stand-in endpoints
+  only; the ORCA input has not been run by us.
+- **One guess per reaction** is now ranked too, by its distance from the reactant and the product: a weaker sign,
+  about twice chance on the reaction-core and barrier splits. `verdicts.csv` gains `endpoint_distance_A`, `charge` and
+  `multiplicity` columns.
 - **A planning agent.** `tsso agent "<question>"` and a chat in the app let you ask for a plan in your own words (your
-  own Anthropic API key). Claude can only call the planning rule, is not sent coordinates or SMILES, and numbers in its
-  answer that are in no tool result are listed under it.
+  own Anthropic API key). Claude can only call the planning rule, is not sent coordinates or SMILES, and points at
+  tool results instead of typing numbers; any number it types itself is listed under the answer. Not yet tried with
+  a live model.
+- RESULTS.md lists what the plan does not do and what is and is not new compared with published work.
 
 ## 0.3.0 (2026-11-19)
 

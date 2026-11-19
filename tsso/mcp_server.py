@@ -60,15 +60,42 @@ def triage_batch(path: str, out_dir: str = 'tsso_batch', charge: int = 0, multip
 
 @mcp.tool()
 def plan_dft_budget(budget: int, path: str = '', reaction_ids: list[int] | None = None, sample: int | None = None,
-                    seed: int = 0, evaluate: bool = False, target_error_rate: float | None = None) -> dict:
+                    seed: int = 0, evaluate: bool = False, target_error_rate: float | None = None,
+                    goal: str = 'find_errors', audit: int = 0, calibration: str = '') -> dict:
     """Plan where a fixed number of DFT runs goes. The plan is a fixed rule, not a judgement: re-generate reactions
-    that still break a rule, give the runs to the reactions whose guesses disagree most, hold the other "check with
-    DFT" reactions, trust the rest. path: a verdicts.csv from triage_batch, the folder holding it, or a folder / CSV
-    of reactions (triaged first); writes dft_plan.csv next to it. Leave path empty for the RDB7 benchmark: give
-    reaction_ids, or sample (how many to draw) and seed; there evaluate=True adds what the reference TS says about
-    the picks (evaluation only) and target_error_rate adds certified trust. Pass the returned caveats on to the
-    person, and never pick the reactions yourself."""
-    return service.plan_dft_budget(budget, path, reaction_ids, sample, seed, evaluate, target_error_rate)
+    that still break a rule, give the runs to the reactions whose guesses disagree most (goal='find_errors') or to the
+    least disputed "check with DFT" reactions (goal='finish_ts', more runs end in a usable TS, fewer errors found),
+    hold the other "check with DFT" reactions, trust the rest. audit: how many of the runs go to trusted reactions
+    drawn at random; only those can reveal an error all models share, and review_dft_results turns their outcomes
+    into an exact bound on the error rate of the trusted rest. path: a verdicts.csv from triage_batch, the folder
+    holding it, or a folder / CSV of reactions (triaged first); writes dft_plan.csv and ORCA inputs (TS optimisation,
+    frequencies and IRC) next to it. Leave path empty for the RDB7 benchmark: give reaction_ids, or sample and seed;
+    there evaluate=True adds what the reference TS says (evaluation only). target_error_rate adds certified trust
+    (benchmark, or your own reactions with calibration = a table of reactions with known answers). Pass the returned
+    caveats on to the person, and never pick the reactions yourself."""
+    return service.plan_dft_budget(budget, path, reaction_ids, sample, seed, evaluate, target_error_rate, None, goal,
+                                   audit, calibration)
+
+
+@mcp.tool()
+def review_dft_results(outcomes: dict[str, str], budget: int, path: str = '', reaction_ids: list[int] | None = None,
+                       sample: int | None = None, seed: int = 0, goal: str = 'find_errors', audit: int = 0) -> dict:
+    """After the DFT runs: outcomes maps reaction id to 'right' (one imaginary frequency and a reaction path that
+    joins this reactant to this product, see irc_check) or 'wrong'. Give the same budget, path, goal, audit and seed
+    as the plan. Returns which reactions to re-generate and, if the plan drew random audits, an exact upper bound on
+    how many of the trusted reactions that were not run are wrong. It is a bound, not an estimate; quote it with its
+    confidence level and never from the targeted runs alone."""
+    return service.review_dft_results(outcomes, budget, path, reaction_ids, sample, seed, goal, audit)
+
+
+@mcp.tool()
+def irc_check(reactant_xyz: str, product_xyz: str, forward_xyz: str, backward_xyz: str,
+              mapped_reaction_smiles: str = '', order: str = 'map') -> dict:
+    """After a TS optimisation and an IRC calculation: do the two ends of the reaction path have the bonds of this
+    reactant and this product, and (with the atom-mapped SMILES) the right handedness at every stereocentre? xyz text
+    or .xyz paths; for a trajectory the last frame is used. A mirror-image TS passes a bonds-only check, so give the
+    SMILES for chiral molecules. Returns outcome 'right' or 'wrong' with the reason."""
+    return service.irc_check(reactant_xyz, product_xyz, forward_xyz, backward_xyz, mapped_reaction_smiles, order)
 
 
 @mcp.tool()

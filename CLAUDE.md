@@ -4,15 +4,19 @@
 - MCP server: `tsso mcp` (configured in .mcp.json; needs `pip install -e .`). Tools: triage_structures (any reaction, any
   elements, from xyz text), triage_batch, evaluate_predictions (stereo-aware scoring), certify_trust, list_reactions,
   triage_reaction, list_rules, get_rule_source, gate_check, save_rule, write_orca_input, benchmark_summary,
-  audit_rdb7_dataset, plan_dft_budget, plan_evidence. Agent skill: tsso/skill/SKILL.md (copy in .claude/skills/; keep the two identical).
+  audit_rdb7_dataset, plan_dft_budget, plan_evidence, review_dft_results, irc_check. Agent skill: tsso/skill/SKILL.md (copy in .claude/skills/; keep the two identical).
 - Your own reactions: triage_structures (SMILES optional: without it tsso/infer.py reads bonds, bond orders and
   stereocentres from the reactant and product geometries; validated in results/geometry_input_validation.json) and
   triage_batch (a folder of reaction folders, or a CSV). Every result has feedback_url (a pre-filled GitHub form).
-- DFT budget: plan_dft_budget / `tsso plan` (tsso/plan.py) is a fixed rule: red -> re-generate, runs to the most disputed,
-  other amber -> hold, rest -> trust. Never pick the reactions yourself; pass on its caveats (IRC after each run; shared
-  errors are invisible; tested on GoFlow/RDB7 only, results/plan_evaluation.json). tsso/agent.py is the chat agent:
-  tools decide, structures are redacted, numbers are traced (check_numbers).
-- CLI equivalents: tsso check / batch / plan / agent / evaluate / certify / triage / gate / author / audit; tsso mcp-config and
+- DFT budget: plan_dft_budget / `tsso plan` (tsso/plan.py) is a fixed rule: red -> re-generate, runs to the most disputed
+  (goal find_errors) or the least disputed amber (goal finish_ts), other amber -> hold, rest -> trust. audit=N spends N
+  runs on trusted reactions drawn at random; review_dft_results / `--results` then gives an exact bound on the trusted
+  error rate (wide with few audits; never quote a rate from the targeted runs). irc_check / `tsso irc-check`
+  (tsso/irc.py) checks IRC ends for bonds and handedness. Never pick the reactions yourself; pass on the caveats.
+  Evidence and limits: results/plan_evaluation.json (GoFlow/RDB7 only; no IRC or new DFT was run for it).
+  tsso/agent.py is the chat agent: tools decide, structures are redacted, numbers are written as {{call:path}}
+  references and filled in by `render`; typed numbers are listed (check_numbers is the weak fallback).
+- CLI equivalents: tsso check / batch / plan / irc-check / agent / evaluate / certify / triage / gate / author / audit; tsso mcp-config and
   tsso skill --install connect agents. Python: `from tsso import second_opinion` (pass None for the SMILES to infer it).
 - Outside a clone (pip install from git), tsso/paths.py fetches benchmark data on first use and writes to ./tsso_output.
 - Example inputs live in examples/. `tsso check ... --report r.html` writes a one-file HTML report card.

@@ -27,7 +27,8 @@ from .triage import ORCA_TEMPLATE
 ENDPOINT_NAMES = ('reactant', 'product')
 SKIP_PREFIXES = ('reference', 'recommended')     # never treat a reference TS or our own output as a guess
 COLUMNS = ['id', 'verdict', 'meaning', 'chosen_guess', 'mirror_repaired', 'disagreement_A', 'batch_disagreement_rank',
-           'rules_broken', 'smiles_source', 'n_guesses', 'input_warnings', 'error']
+           'rules_broken', 'smiles_source', 'n_guesses', 'input_warnings', 'error', 'endpoint_distance_A', 'charge',
+           'multiplicity']
 
 
 def _xyz_files(folder):
@@ -109,7 +110,9 @@ def triage_batch(source, out_dir='tsso_batch', charge=0, multiplicity=1, reports
                     'mirror_repaired': res['mirror_repaired'], 'disagreement_A': res['disagreement_A'],
                     'rules_broken': '; '.join(f"{x['rule']}: {x['detail']}" for x in res['rules_broken_by_recommended_guess']),
                     'smiles_source': res['smiles_source'], 'n_guesses': res['n_guesses'],
-                    'input_warnings': ' | '.join(res['input_warnings'])})
+                    'input_warnings': ' | '.join(res['input_warnings']),
+                    'endpoint_distance_A': res.get('endpoint_distance_A'), 'charge': res['charge'],
+                    'multiplicity': res['multiplicity']})
         rows.append(row); results.append(res)
     d = np.array([r['disagreement_A'] if r and r.get('disagreement_A') is not None else np.nan for r in results], float)
     ok = np.isfinite(d)

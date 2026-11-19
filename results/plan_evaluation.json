@@ -374,10 +374,378 @@
    "note": "15 reactions; too few for rates, shown as counts (scripts/dft_prospective.py)."
   }
  },
+ "F_two_goals": {
+  "by_budget": [
+   {
+    "budget": 5,
+    "find_errors": {
+     "picks": 5,
+     "wrong_guesses_found": 5,
+     "picks_with_a_right_guess": 0
+    },
+    "finish_ts": {
+     "picks": 5,
+     "wrong_guesses_found": 2,
+     "picks_with_a_right_guess": 3
+    }
+   },
+   {
+    "budget": 10,
+    "find_errors": {
+     "picks": 10,
+     "wrong_guesses_found": 9,
+     "picks_with_a_right_guess": 1
+    },
+    "finish_ts": {
+     "picks": 10,
+     "wrong_guesses_found": 3,
+     "picks_with_a_right_guess": 7
+    }
+   },
+   {
+    "budget": 25,
+    "find_errors": {
+     "picks": 25,
+     "wrong_guesses_found": 21,
+     "picks_with_a_right_guess": 4
+    },
+    "finish_ts": {
+     "picks": 25,
+     "wrong_guesses_found": 6,
+     "picks_with_a_right_guess": 19
+    }
+   },
+   {
+    "budget": 50,
+    "find_errors": {
+     "picks": 50,
+     "wrong_guesses_found": 33,
+     "picks_with_a_right_guess": 17
+    },
+    "finish_ts": {
+     "picks": 50,
+     "wrong_guesses_found": 14,
+     "picks_with_a_right_guess": 36
+    }
+   },
+   {
+    "budget": 100,
+    "find_errors": {
+     "picks": 100,
+     "wrong_guesses_found": 53,
+     "picks_with_a_right_guess": 47
+    },
+    "finish_ts": {
+     "picks": 100,
+     "wrong_guesses_found": 31,
+     "picks_with_a_right_guess": 69
+    }
+   }
+  ],
+  "note": "A right guess is the start most likely to finish in the right TS (in the GFN2-xTB tests, 17 of 21 right \"check with DFT\" guesses reached the reference TS and 1 of 9 wrong ones). finish_ts only draws on \"check with DFT\" reactions; trusted ones need no run to be used."
+ },
+ "G_random_audits": {
+  "rows": [
+   {
+    "batch_size": 100,
+    "random_audits": 10,
+    "draws": 5000,
+    "share_of_draws_where_the_bound_held": 1.0,
+    "mean_bound_on_error_rate": 0.355,
+    "mean_true_error_rate_of_the_rest": 0.062,
+    "share_of_draws_with_no_wrong_audit": 0.525
+   },
+   {
+    "batch_size": 100,
+    "random_audits": 30,
+    "draws": 5000,
+    "share_of_draws_where_the_bound_held": 0.9934,
+    "mean_bound_on_error_rate": 0.213,
+    "mean_true_error_rate_of_the_rest": 0.062,
+    "share_of_draws_with_no_wrong_audit": 0.137
+   },
+   {
+    "batch_size": 300,
+    "random_audits": 30,
+    "draws": 5000,
+    "share_of_draws_where_the_bound_held": 0.9994,
+    "mean_bound_on_error_rate": 0.194,
+    "mean_true_error_rate_of_the_rest": 0.062,
+    "share_of_draws_with_no_wrong_audit": 0.13
+   },
+   {
+    "batch_size": 300,
+    "random_audits": 60,
+    "draws": 5000,
+    "share_of_draws_where_the_bound_held": 0.9792,
+    "mean_bound_on_error_rate": 0.149,
+    "mean_true_error_rate_of_the_rest": 0.062,
+    "share_of_draws_with_no_wrong_audit": 0.02
+   }
+  ],
+  "confidence_claimed": 0.95,
+  "audits_needed_for_a_10pct_bound_if_all_come_back_right": {
+   "30": 29,
+   "50": 39,
+   "100": 34,
+   "300": 30,
+   "1000": 29
+  },
+  "note": "Wrong = geometry or handedness wrong against the RDB7 reference. The bound is exact for a random draw, so holding in at least 95% of draws is expected, not a discovery; the point is how wide it is."
+ },
+ "H_fewer_guesses": {
+  "rows": [
+   {
+    "guesses_per_reaction": 2,
+    "subsets_tried": 3,
+    "wrong_among_reactions_that_can_get_a_run": 0.131,
+    "wrong_among_first_picks": {
+     "5": {
+      "mean": 2.3,
+      "min": 1,
+      "max": 3
+     },
+     "10": {
+      "mean": 5.0,
+      "min": 2,
+      "max": 7
+     },
+     "25": {
+      "mean": 14.3,
+      "min": 11,
+      "max": 16
+     },
+     "50": {
+      "mean": 31.0,
+      "min": 24,
+      "max": 36
+     }
+    }
+   },
+   {
+    "guesses_per_reaction": 3,
+    "subsets_tried": 3,
+    "wrong_among_reactions_that_can_get_a_run": 0.123,
+    "wrong_among_first_picks": {
+     "5": {
+      "mean": 3.3,
+      "min": 2,
+      "max": 4
+     },
+     "10": {
+      "mean": 7.7,
+      "min": 5,
+      "max": 9
+     },
+     "25": {
+      "mean": 17.7,
+      "min": 13,
+      "max": 20
+     },
+     "50": {
+      "mean": 31.3,
+      "min": 26,
+      "max": 34
+     }
+    }
+   },
+   {
+    "guesses_per_reaction": 4,
+    "subsets_tried": 3,
+    "wrong_among_reactions_that_can_get_a_run": 0.126,
+    "wrong_among_first_picks": {
+     "5": {
+      "mean": 4.7,
+      "min": 4,
+      "max": 5
+     },
+     "10": {
+      "mean": 8.7,
+      "min": 8,
+      "max": 9
+     },
+     "25": {
+      "mean": 19.0,
+      "min": 15,
+      "max": 22
+     },
+     "50": {
+      "mean": 33.0,
+      "min": 30,
+      "max": 36
+     }
+    }
+   },
+   {
+    "guesses_per_reaction": 6,
+    "subsets_tried": 3,
+    "wrong_among_reactions_that_can_get_a_run": 0.114,
+    "wrong_among_first_picks": {
+     "5": {
+      "mean": 4.7,
+      "min": 4,
+      "max": 5
+     },
+     "10": {
+      "mean": 9.0,
+      "min": 7,
+      "max": 10
+     },
+     "25": {
+      "mean": 21.0,
+      "min": 18,
+      "max": 23
+     },
+     "50": {
+      "mean": 33.0,
+      "min": 29,
+      "max": 38
+     }
+    }
+   }
+  ],
+  "note": "Random subsets of the 8 GoFlow seed models, all 1,194 reactions. Compare with section A (8 models)."
+ },
+ "I_single_guess_other_splits": {
+  "reaction_core_split": {
+   "reactions": 985,
+   "excluded_because_in_the_random_split_test_set": true,
+   "wrong_among_reactions_that_can_get_a_run": 0.202,
+   "by_budget": [
+    {
+     "budget": 10,
+     "wrong_among_picked": 4,
+     "share_95pct_interval": [
+      0.1,
+      0.7
+     ],
+     "expected_if_picked_at_random": 2.0
+    },
+    {
+     "budget": 25,
+     "wrong_among_picked": 11,
+     "share_95pct_interval": [
+      0.24,
+      0.64
+     ],
+     "expected_if_picked_at_random": 5.1
+    },
+    {
+     "budget": 50,
+     "wrong_among_picked": 24,
+     "share_95pct_interval": [
+      0.34,
+      0.62
+     ],
+     "expected_if_picked_at_random": 10.1
+    },
+    {
+     "budget": 100,
+     "wrong_among_picked": 40,
+     "share_95pct_interval": [
+      0.3,
+      0.51
+     ],
+     "expected_if_picked_at_random": 20.2
+    }
+   ]
+  },
+  "barrier_split": {
+   "reactions": 1083,
+   "excluded_because_in_the_random_split_test_set": true,
+   "wrong_among_reactions_that_can_get_a_run": 0.245,
+   "by_budget": [
+    {
+     "budget": 10,
+     "wrong_among_picked": 5,
+     "share_95pct_interval": [
+      0.1,
+      0.8
+     ],
+     "expected_if_picked_at_random": 2.5
+    },
+    {
+     "budget": 25,
+     "wrong_among_picked": 13,
+     "share_95pct_interval": [
+      0.32,
+      0.68
+     ],
+     "expected_if_picked_at_random": 6.1
+    },
+    {
+     "budget": 50,
+     "wrong_among_picked": 23,
+     "share_95pct_interval": [
+      0.34,
+      0.62
+     ],
+     "expected_if_picked_at_random": 12.3
+    },
+    {
+     "budget": 100,
+     "wrong_among_picked": 46,
+     "share_95pct_interval": [
+      0.37,
+      0.56
+     ],
+     "expected_if_picked_at_random": 24.5
+    }
+   ]
+  },
+  "note": "The endpoint-distance signal was chosen after looking at the random-split test reactions (section K); these splits use other reactions and another trained model, so they are the fair test of it."
+ },
+ "J_reaction_path_check_on_stand_ins": {
+  "reactions": 1194,
+  "true_ends_called_right": 1194,
+  "true_ends_swapped_called_right": 1194,
+  "both_ends_the_reactant_called_wrong": 1194,
+  "noisy_true_ends_called_right": 1178,
+  "reactions_with_stereocentres_compared": 676,
+  "mirror_image_ends_called_wrong_with_smiles": 676,
+  "mirror_image_ends_called_wrong_without_smiles": 0,
+  "reactant_and_product_have_the_same_bonds": 0,
+  "note": "Stand-ins, not IRC output: the RDB7 reactant and product geometries play the two ends of a path; noise is 0.03 A Gaussian per coordinate. Real IRC ends are less tidy (they may stop before a bond has fully formed), so this shows the check is consistent, not how it does on real paths."
+ },
+ "K_signals_for_hidden_errors": {
+  "trusted_reactions": 951,
+  "of_which_wrong": 42,
+  "signals": {
+   "model disagreement of the chosen guess (the rule in use)": {
+    "auroc_among_trusted": 0.714,
+    "auroc_among_all_that_can_get_a_run": 0.849,
+    "wrong_in_the_top_50_trusted": 5
+   },
+   "largest disagreement between any two guesses": {
+    "auroc_among_trusted": 0.725,
+    "auroc_among_all_that_can_get_a_run": 0.839,
+    "wrong_in_the_top_50_trusted": 8
+   },
+   "distance of the guess from the nearer of reactant and product": {
+    "auroc_among_trusted": 0.746,
+    "auroc_among_all_that_can_get_a_run": 0.774,
+    "wrong_in_the_top_50_trusted": 7
+   }
+  },
+  "disagreement_and_distance_combined_by_rank": {
+   "auroc_among_all_that_can_get_a_run": 0.873,
+   "wrong_in_first_picks": {
+    "5": 3,
+    "10": 7,
+    "25": 16,
+    "50": 32,
+    "100": 59
+   },
+   "verdict": "Not adopted: it finds fewer wrong guesses in the first 5 to 25 picks than disagreement alone (section A), the same number in the first 50 and more only by 100."
+  },
+  "random_top_50_trusted_would_hold": 2.2,
+  "warning": "Thirteen signals were tried on these test reactions before these three were kept, so the numbers here are optimistic for the distance signal. Its fair test is section I."
+ },
  "limits": [
   "Retrospective: counts guesses a check would expose; no new DFT was run for this evaluation.",
   "One generator family (GoFlow) and one dataset (RDB7: small gas-phase H/C/N/O molecules). Both ensembles use the same test reactions, so C tests another ensemble, not other chemistry.",
-  "The harder reaction-core and barrier splits in this repository have one model each, so there is no disagreement to rank by and the plan is untested there.",
+  "The harder reaction-core and barrier splits in this repository have one model each, so model disagreement is untested there; only the weaker single-guess order is (section I).",
+  "No reaction path (IRC) was computed here; section J uses stand-in endpoints.",
   "The order has no fitted parameters, but the 0.2 A error threshold and the top-20% \"check with DFT\" cut-off are choices."
  ]
 }

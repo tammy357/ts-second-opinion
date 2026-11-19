@@ -12,6 +12,10 @@
                                      triage a folder of reaction folders (or a CSV) into one verdict table
   tsso plan tsso_batch --budget 5    say where a fixed number of DFT runs should go (a fixed rule; omit the folder to
                                      try it on the RDB7 benchmark with --sample 40 --evaluate)
+                                     --goal finish_ts, --audit N (random audits of trusted reactions), --results runs.csv
+  tsso irc-check --reactant r.xyz --product p.xyz --forward f.xyz --backward b.xyz [--smiles ...]
+                                     after a DFT run: does the reaction path join this reactant to this product,
+                                     with the right handedness?
   tsso agent "question"              ask the planning agent in your own words (needs ANTHROPIC_API_KEY)
   tsso evaluate preds.xyz refs.xyz reactions.smi
                                      stereo-aware evaluation of any TS generator's test-set predictions
@@ -93,7 +97,21 @@ def main(argv=None):
     p.add_argument('--sample', type=int, help='benchmark: draw this many reactions at random')
     p.add_argument('--seed', type=int, default=0)
     p.add_argument('--evaluate', action='store_true', help='benchmark: show what the reference TS says about the picks')
-    p.add_argument('--target', type=float, help='benchmark: add certified trust at this average error rate')
+    p.add_argument('--target', type=float, help='add certified trust at this average error rate (benchmark, or your own '
+                                                'reactions with --calibration)')
+    p.add_argument('--goal', choices=['find_errors', 'finish_ts'], default='find_errors',
+                   help='find_errors: most disputed first (default). finish_ts: the runs most likely to end in a usable TS')
+    p.add_argument('--audit', type=int, default=0, help='runs to spend on trusted reactions drawn at random; their '
+                                                         'outcomes bound the error rate of the rest (see --results)')
+    p.add_argument('--calibration', default='', help='your own reactions with known answers: a verdict table with a '
+                                                      '"wrong" column, for --target')
+    p.add_argument('--results', help='after the runs: a CSV with columns id,outcome (right or wrong); prints what they show')
+    p = sub.add_parser('irc-check', help='does a reaction path (IRC) join this reactant to this product, with the right handedness?')
+    p.add_argument('--reactant', required=True); p.add_argument('--product', required=True)
+    p.add_argument('--forward', required=True, help='forward IRC branch (.xyz; the last frame of a trajectory is used)')
+    p.add_argument('--backward', required=True, help='backward IRC branch')
+    p.add_argument('--smiles', help='atom-mapped reaction SMILES (or a file with it); needed to check handedness')
+    p.add_argument('--order', choices=['map', 'smiles'], default='map')
     p = sub.add_parser('agent', help='ask the planning agent a question (needs ANTHROPIC_API_KEY)')
     p.add_argument('question')
     p = sub.add_parser('evaluate', help='stereo-aware evaluation of any TS generator')
@@ -190,8 +208,24 @@ def main(argv=None):
             print(f"  verdict table: {res['table']}")
             print('  ' + res['note'])
     elif a.cmd == 'plan':
-        res = service.plan_dft_budget(a.budget, a.source, None, a.sample, a.seed, a.evaluate, a.target)
-        if a.json or 'error' in res:
+        res = service.plan_dft_budget(a.budget, a.source, None, a.sample, a.seed, a.evaluate, a.target, None, a.goal,
+                                      a.audit, a.calibration)
+        if a.results and 'error' not in res:
+            import csv as _csv
+            from .plan import review_results
+            got = {(r.get('id') or '').strip(): (r.get('outcome') or '').strip()
+                   for r in _csv.DictReader(open(a.results, encoding='utf-8-sig')) if (r.get('id') or '').strip()}
+            rev = review_results(res, got)
+            if a.json or 'error' in rev:
+                _print(rev, True)
+            else:
+                t = rev['targeted_runs']
+                print(f"{rev['runs_reported']} runs reported. Targeted runs: {t['right']} right, {t['wrong']} wrong"
+                      + (f" (re-generate: {', '.join(t['to_regenerate'])})" if t['to_regenerate'] else '') + '.')
+                print('  ' + rev['trusted_reactions']['note'])
+                if rev['runs_still_missing']:
+                    print('  not reported yet: ' + ', '.join(rev['runs_still_missing']))
+        elif a.json or 'error' in res:
             _print(res, True)
         else:
             from .plan import ACTION_LABEL
@@ -208,6 +242,17 @@ def main(argv=None):
                 print(f"  plan table: {res['plan_table']}")
             for c in res['caveats']:
                 print('  note: ' + c)
+    elif a.cmd == 'irc-check':
+        smi = (Path(a.smiles).read_text().split()[0] if Path(a.smiles).is_file() else a.smiles) if a.smiles else ''
+        res = service.irc_check(Path(a.reactant), Path(a.product), Path(a.forward), Path(a.backward), smi, a.order)
+        if a.json or 'error' in res:
+            _print(res, True)
+        else:
+            print(f"{'RIGHT' if res['outcome'] == 'right' else 'WRONG'}: {res['why']}.")
+            for end in ('forward_end', 'backward_end'):
+                if res.get(end, {}).get('bonds_that_differ'):
+                    print(f"  {end.replace('_', ' ')}: nearest to the {res[end]['nearest']}, but differs at "
+                          f"{', '.join(res[end]['bonds_that_differ'])}")
     elif a.cmd == 'agent':
         import os
         from .agent import run, http_sender

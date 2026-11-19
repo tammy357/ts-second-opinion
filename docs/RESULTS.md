@@ -158,37 +158,116 @@ guesses at every budget. With a different ensemble (five GoFlow runs of four mod
 10 picks held 6 wrong guesses and the first 50 held 33 (against 9 and 32 above), so the gain does not depend on
 one set of seeds, though the top of the order is noisier.
 
-**What the plan does not do.**
+**Five limits of the first version, and what was done about each.** All numbers are from
+`results/plan_evaluation.json`.
 
-- *It does not find errors the models share.* The trusted reactions keep a 4.4% geometry-error rate
-  (6.2% counting handedness) whatever the budget, because the budget only shrinks the on-hold set. Ensemble spread
-  measures variance, not bias; for learned potentials, disagreement has been reported to miss errors that come from
-  the model family itself ([Knowing when to trust machine-learned interatomic potentials, 2026](https://arxiv.org/abs/2605.00640)).
-- *It does not maximise successful runs.* A run started from a wrong guess rarely reaches the right TS: in the
-  GFN2-xTB tests, "check with DFT" guesses with a wrong geometry reached the reference TS in 1 of 9 runs, those with a
-  right geometry in 17 of 21. So many picked reactions will come back as "re-generate". That is the check working,
-  but it is not the same as getting 5 finished TSs for 5 runs.
-- *A frequency check is not the check.* Of the 62 xTB optimisations that ended with exactly one imaginary frequency,
-  21 were not the reference TS (5 trust, 11 check, 5 re-generate; some of these are xTB differing from DFT). A saddle point
-  with one imaginary frequency need not join this reactant to this product, which is what an IRC calculation tests, so
-  the plan asks for one after every run.
-- *It is tested on one generator family and one dataset,* and the two ensembles share the same reactions. The harder
-  reaction-core and barrier splits here have one model each, so there is no disagreement to rank by and the plan is
-  untested on them. With one guess per reaction the plan can only apply the rules.
-- *No new DFT was run for this test.* It counts wrong guesses among the picks; it does not show what a campaign that
-  followed the plan would have saved.
+*1. Errors that all the models share.* Model disagreement measures spread, not bias, so the trusted reactions keep a
+4.4% geometry-error rate (6.2% counting handedness) whatever the budget. The same has been reported for learned
+potentials ([Knowing when to trust machine-learned interatomic potentials, 2026](https://arxiv.org/abs/2605.00640)).
+We looked for a reference-free signal that ranks the wrong guesses hidden among trusted reactions. Thirteen were
+tried on the test reactions; the best, how far the guess sits from the nearer of the reactant and the product
+(D-MAE), reached an AUROC of 0.746 among trusted reactions against 0.714 for disagreement. Adding it to the
+order by rank found 3, 7 and 16 wrong guesses in the first 5, 10 and 25 picks against 5, 9 and 21 for
+disagreement alone, so it was **not** adopted for the main order. What the plan offers instead is a **random audit**
+(`--audit N`): N of the runs go to trusted reactions drawn by lot, and their outcomes give an exact upper bound
+(hypergeometric, as in acceptance sampling) on how many of the other trusted reactions are wrong. It needs no
+assumption about the models or the chemistry, only that the draw was random and that every audit is reported.
+
+| Reactions in the batch | Random audits | Bound held (claimed: at least 95%) | Mean bound on the error rate | True error rate of the rest |
+|---|---|---|---|---|
+| 100 | 10 | 100.0% | 35.5% | 6.2% |
+| 100 | 30 | 99.3% | 21.3% | 6.2% |
+| 300 | 30 | 99.9% | 19.4% | 6.2% |
+| 300 | 60 | 97.9% | 14.9% | 6.2% |
+
+The bound held as often as it should. It is wide: about 34 audits that all come back right are needed to bound
+100 trusted reactions at 10%, so with five runs an audit says almost nothing, and the plan says so. Every audit is
+also a run not spent on a doubtful reaction. Choosing test points under a labelling budget, and the bias that
+choosing them non-randomly introduces, is the subject of active testing
+([Kossen, Farquhar, Gal & Rainforth 2021](https://arxiv.org/abs/2103.05331)); the audit here is the simplest
+unbiased version of that idea, not a new method.
+
+*2. Finding errors is not the same as finishing TSs.* A run started from a wrong guess rarely reaches the right TS:
+in the GFN2-xTB tests, "check with DFT" guesses with a wrong geometry reached the reference TS in 1 of 9 runs, those with
+a right geometry in 17 of 21. There is now a second goal, `--goal finish_ts`, which gives the runs to the *least*
+disputed "check with DFT" reactions. The two goals pull in opposite directions, and the person has to choose:
+
+| DFT runs | Wrong guesses found: find_errors | finish_ts | Picks with a right guess: find_errors | finish_ts |
+|---|---|---|---|---|
+| 5 | 5 | 2 | 0 | 3 |
+| 10 | 9 | 3 | 1 | 7 |
+| 25 | 21 | 6 | 4 | 19 |
+| 50 | 33 | 14 | 17 | 36 |
+| 100 | 53 | 31 | 47 | 69 |
+
+"Right guess" counts geometry and handedness. It is a proxy for a run that finishes in the right TS, not a count of
+finished runs: no DFT was run for this table.
+
+*3. A frequency check is not enough.* Of the 62 xTB optimisations that ended with exactly one imaginary frequency, 21
+were not the reference TS (5 trust, 11 check, 5 re-generate; some of this is xTB differing from DFT). The plan now
+writes ORCA inputs that run the TS optimisation, the frequencies and the reaction path (IRC) in one job, and
+`tsso irc-check` (MCP tool `irc_check`, `tsso/irc.py`) compares the two ends of the path with the reactant and the
+product. Comparing the bonding at IRC ends is standard in automated workflows
+(for example [this 2020 PeerJ Physical Chemistry workflow](https://peerj.com/articles/pchem-15/), which compares the adjacency matrices of the IRC ends). The addition here is handedness: a mirror-image TS
+has the same bonds at both ends of its path, so a bonds-only check passes it, and at least one recent benchmark
+removes stereochemistry before comparing the ends ([TSBench, 2026](https://arxiv.org/abs/2609.08503)). On stand-in
+endpoints (the RDB7 reactant and product geometries, not IRC output) the check called 1194 of 1194 true pairs
+right in either order, 1194 of 1194 paths that return to the reactant wrong, and 676 of 676 mirror-image pairs
+wrong when given the SMILES, against 0 of 676 without it. With 0.03 Å of noise on every coordinate, 16 true pairs were
+called wrong, so bonds read from distances are fragile near a threshold. **Neither the ORCA input nor the check has
+been run on a real IRC calculation**: the input follows the ORCA manual, which allows IRC together with OptTS and
+Freq, and real path ends are less tidy than optimised minima.
+
+*4. One generator family, one dataset.* Still true, and no new DFT was run. Two things were added from the data in the
+repository. First, fewer guesses (random subsets of the 8 seed models; mean and range over three subsets):
+
+| Guesses per reaction | Wrong among the first 5 picks | first 10 | first 25 |
+|---|---|---|---|
+| 2 | 2.3 (1–3) | 5.0 (2–7) | 14.3 (11–16) |
+| 3 | 3.3 (2–4) | 7.7 (5–9) | 17.7 (13–20) |
+| 4 | 4.7 (4–5) | 8.7 (8–9) | 19.0 (15–22) |
+| 6 | 4.7 (4–5) | 9.0 (7–10) | 21.0 (18–23) |
+| 8 (all) | 5 | 9 | 21 |
+
+Two guesses already help; four give most of the benefit. Second, the harder reaction-core and barrier splits have one
+GoFlow model each, so there is no disagreement there. With one guess per reaction the plan now ranks by the endpoint
+distance described above. On reactions outside the random-split test set, and with a different trained model, the
+first picks held: reaction-core split, 4 of 10 (random 2.0), 11 of 25 (random 5.1), 24 of 50 (random 10.1), 40 of 100 (random 20.2); barrier split,
+5 of 10 (random 2.5), 13 of 25 (random 6.1), 23 of 50 (random 12.3), 46 of 100 (random 24.5). That is about twice chance, far weaker than disagreement, with wide
+intervals at 10 picks; it is a fallback, and the plan labels it as the weaker sign. The signal was chosen on the
+random-split test reactions, so these two splits are its only fair test.
+
+*5. An error rate for your own reactions.* Certified trust (conformal selection,
+[Jin & Candès 2023](https://jmlr.org/papers/v24/22-1176.html)) holds only if new reactions are exchangeable with a
+calibration set, and a visitor's reactions have none. There are now two honest routes. If you have reactions with
+known answers from the same generator, `tsso plan ... --target 0.05 --calibration known.csv` certifies against them
+(reactions that still break a rule are never certified). If you do not, the random audit above is the only source of
+an error rate, and `tsso plan ... --results runs.csv` reports it after the runs. Without either, the plan states that
+it gives no error rate.
+
+**Is this new?** Partly, and less than first claimed. Using a learned confidence score to decide which generated TSs
+go to DFT is published: OA-ReactDiff pairs its generator with a confidence model and sends 14% of reactions to DFT
+([Duan, Du, Jia & Kulik 2023](https://arxiv.org/abs/2304.06174)). Ranking by committee disagreement is query by
+committee ([Seung, Opper & Sompolinsky 1992](https://doi.org/10.1145/130385.130417)), random audits are acceptance
+sampling, and bond-based IRC checks are routine. What we did not find in a short search (about ten queries, not a systematic review), and so describe as
+"not found" rather than "first": (a) a budget plan that works after generation on any model's guesses with no
+trained confidence model, tested for how many wrong guesses its picks contain; (b) an exact, assumption-free bound on
+the error rate of the *accepted* TS guesses from a random audit inside the same budget; (c) a reaction-path check
+that compares handedness as well as bonds; (d) an agent whose numbers are copied from tool results by reference. Each
+is a small step, and (d) has not been tested with a live model.
 
 **The planning agent** (`tsso agent`, the chat in app section 3b, `tsso/agent.py`) lets a person ask for a plan in their
-own words. Three properties are enforced in code and covered by tests (`tests/test_plan.py`), not left to the prompt:
-Claude can only call the planning rule and read-only tools, so it cannot choose the reactions; tool results are
-stripped of coordinates, SMILES and ORCA inputs before Claude sees them (verdicts, rule names, atom labels such as
-"C3–H7" and disagreement values are sent); and every number in its answer that appears in no tool result and not in
-the person's messages is listed under the answer. That last check is a coarse net, not proof. We measured how often an arbitrary number would slip through
-it for 40-reaction batches: with only the plan in view, about 10% of whole numbers from 0 to 100 and 2–3% of decimals
-match something by chance; once the agent has also read the benchmark evidence, about 31% of whole numbers and 7–11% of
-decimals do. So it catches invented rates and decimals well and small whole numbers poorly. A traced number can still
-be in a wrong sentence, and a correct sum that Claude worked out is flagged too. No answer from the agent has been
-recorded or scored yet (that needs an API key, which the build environment did not have); the plan table is the record.
+own words. Three properties are enforced in code and covered by tests (`tests/test_plan.py`): Claude can only call the
+planning rule and read-only tools, so it cannot choose the reactions; tool results are stripped of coordinates, SMILES
+and ORCA inputs before Claude sees them (verdicts, rule names, atom labels such as "C3–H7" and disagreement values are
+sent); and Claude is told not to type numbers but to point at a field of a tool result, for example
+`{{1:counts.hold}}`, which the program replaces with the value. A pointer to a field that does not exist is shown as
+such. Every number Claude types anyway is listed under the answer, split into "also present in a tool result" and
+"found nowhere". The first group is a weak check: once the benchmark evidence has been read, about 31% of arbitrary
+whole numbers below 100 match something by chance, which is why pointing replaced matching. Three limits remain. A
+copied value can be the wrong field for its sentence. Whether Claude keeps to the pointer format has not been
+measured, because no live run could be made where this was built (no API key). And no answer has been scored for
+quality; the plan table is the record.
 
 ### New calculations: optimising the guesses with DFT
 
@@ -423,7 +502,7 @@ plain-English rule ──► Claude writes check(rxn, xyz) ──► gate: accep
 TS Second Opinion is also an MCP server, so Claude Code, Claude Desktop or any MCP client can use it as tools:
 `triage_structures` (your own reaction and guesses, from any generator), `evaluate_predictions`, `certify_trust`,
 `list_reactions`, `triage_reaction`, `list_rules`, `get_rule_source`, `gate_check`, `save_rule`, `write_orca_input`,
-`benchmark_summary`, `triage_batch`, `plan_dft_budget` and `plan_evidence`.
+`benchmark_summary`, `triage_batch`, `plan_dft_budget`, `plan_evidence`, `review_dft_results` and `irc_check`.
 
 ```bash
 pip install -e .            # installs the `tsso` command

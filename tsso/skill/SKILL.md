@@ -40,7 +40,10 @@ tsso batch my_reactions/ --out tsso_batch        # writes tsso_batch/verdicts.cs
 
 A fixed number of DFT runs to spend: `tsso plan tsso_batch --budget 5` (MCP tool plan_dft_budget) says which reactions
 get a run (the ones whose guesses disagree most), which to trust, which to hold and which to re-generate, and writes
-`dft_plan.csv`. It is a fixed rule: do not pick the reactions yourself.
+`dft_plan.csv` plus ORCA inputs that include the reaction path (IRC). It is a fixed rule: do not pick the reactions
+yourself. Options: `--goal finish_ts` (the runs most likely to end in a usable TS; finds fewer errors) and `--audit N`
+(N runs on trusted reactions drawn at random). After the runs: `tsso irc-check` per reaction (does the path join this
+reactant to this product, with the right handedness?), then `tsso plan ... --results runs.csv`.
 
 Score a generator's test-set predictions with and without handedness: `tsso evaluate preds.xyz refs.xyz reactions.smi`.
 
@@ -69,7 +72,12 @@ gate_check and save_rule (turn a rule into a tested check).
 - The amber cut-off was calibrated on GoFlow/RDB7. For another generator, use batch_disagreement_rank in batch output,
   or recalibrate.
 - A DFT budget plan finds likely errors; it cannot see an error every guess shares, and it was tested on GoFlow/RDB7
-  only (quote plan_evidence as benchmark results, not predictions). Tell the person to confirm each optimised TS with
-  an IRC calculation: one imaginary frequency is not enough. Reactions on hold are not trusted.
+  only (quote plan_evidence as benchmark results, not predictions). Reactions on hold are not trusted.
+- An error rate for the trusted reactions comes only from random audits (review_dft_results) or from a calibration set
+  of the person's own. Quote the audit bound with its confidence level, say that it is a bound and that few audits
+  make it wide, and never derive a rate from the targeted runs: they were picked because they looked doubtful.
+- Tell the person to confirm each optimised TS with an IRC calculation and irc_check: one imaginary frequency is not
+  enough, and without the SMILES the check cannot see a mirror-image TS. The ORCA input with IRC has not been run by
+  the authors; suggest trying one first.
 - Certified trust (conformal selection) is an average guarantee that holds only if new reactions resemble the
   calibration set; say so whenever you quote it.

@@ -7,9 +7,11 @@ Three things keep it honest, and each is code rather than a promise:
      tools from tsso.service). The plan is a fixed function of its inputs (tsso/plan.py).
   2. No structures leave. Tool results are passed through `redact` before Claude sees them: coordinates, SMILES and
      ORCA inputs are removed. Verdicts, rule names, atom labels such as "C3-H7" and disagreement values are sent.
-  3. Numbers are traced. `check_numbers` lists every number in Claude's answer that does not appear in a tool result
-     or in the person's own messages. It is a flag for the reader, not proof: a traced number can still sit in a
-     wrong sentence, and a number Claude worked out (a sum, a difference) is flagged even when right.
+  3. Numbers are filled in, not typed. Claude is told to write a reference such as {{1:counts.hold}} (tool call 1,
+     field counts.hold) wherever a number or a reaction id from a tool belongs; `render` replaces each reference with
+     the value from that tool result, so those numbers cannot be misquoted. Whatever Claude types as digits anyway is
+     listed for the reader in two groups: found in a tool result or the person's messages (a weak check: a match can
+     be chance), and found nowhere. Neither group is proof of anything about the sentence around the number.
 
 The loop is written without a network client so it runs anywhere: `request` builds the next API call and `absorb`
 takes the reply, runs any tools and says whether the answer is finished. `run` drives it with any function that
@@ -31,7 +33,13 @@ SYSTEM = (
     'transition-state (TS) guesses, using the TS Second Opinion tools.\n'
     'Rules you must follow:\n'
     '- Call a tool for every decision and every number. Never choose which reactions get DFT yourself, never estimate '
-    'an error rate, and do not do arithmetic on tool output: quote numbers exactly as the tools return them.\n'
+    'an error rate, and do not do arithmetic on tool output.\n'
+    '- Do not type numbers or reaction ids that come from a tool. Each tool result arrives as {"call": N, "result": ...}. '
+    'Where a value belongs, write a reference {{N:path}}: N is the call number and path is the dotted path into its '
+    'result, with list positions as numbers starting at 0. Examples: {{1:counts.hold}}, {{1:run_dft}} (a list is '
+    'written out with commas), {{2:B_batches.1.mean_wrong_among_picked}}. Add |% to show a fraction as a percentage: '
+    '{{2:D_what_is_left.rows.0.geometry_error_among_trusted|%}}. The reference is replaced by the value before the '
+    'person reads your answer. You may type numbers the person gave you.\n'
     '- If the person has not said how many DFT runs they can afford, ask before planning.\n'
     '- Say what to do next in plain words: which reactions to run, which to trust, which are on hold, which to '
     're-generate. Keep it under 150 words unless asked for more. No headings.\n'
@@ -75,7 +83,12 @@ def default_tools():
             {'budget': {'type': 'integer', 'minimum': 0, 'description': 'DFT runs the person can afford'},
              'path': {'type': 'string'}, 'reaction_ids': {'type': 'array', 'items': {'type': 'integer'}},
              'sample': {'type': 'integer', 'minimum': 2}, 'seed': {'type': 'integer'},
-             'evaluate': {'type': 'boolean'}, 'target_error_rate': {'type': 'number'}}, ['budget']),
+             'evaluate': {'type': 'boolean'}, 'target_error_rate': {'type': 'number'},
+             'goal': {'type': 'string', 'enum': ['find_errors', 'finish_ts'],
+                      'description': 'find_errors: most disputed first. finish_ts: runs most likely to end in a usable TS'},
+             'audit': {'type': 'integer', 'minimum': 0,
+                       'description': 'runs to spend on trusted reactions drawn at random, to bound their error rate'}},
+            ['budget']),
             lambda **a: service.plan_dft_budget(**a)),
         'plan_evidence': (_tool(
             'plan_evidence',
@@ -98,11 +111,12 @@ def batch_tools(rows, evidence=None):
     """Tools tied to one batch of verdict rows (what the app uses): Claude can re-plan this batch for another budget
     and read the benchmark evidence, and nothing else. The rows never include reference answers."""
     from .plan import plan_dft_budget, explain_plan
-    keep = ('id', 'verdict', 'disagreement_A', 'mirror_repaired', 'rules_broken', 'error')
+    keep = ('id', 'verdict', 'disagreement_A', 'endpoint_distance_A', 'mirror_repaired', 'rules_broken', 'error')
     rows = [{k: r.get(k) for k in keep} for r in rows]
 
-    def plan(budget):
-        p = plan_dft_budget(rows, int(budget) if isinstance(budget, float) and budget.is_integer() else budget)
+    def plan(budget, goal='find_errors', audit=0):
+        p = plan_dft_budget(rows, int(budget) if isinstance(budget, float) and budget.is_integer() else budget,
+                            goal=goal, audit=int(audit) if isinstance(audit, float) and audit.is_integer() else audit)
         if 'error' not in p:
             p['in_plain_words'] = explain_plan(p)
             p['plan'] = [it for it in p['plan'] if it['action'] != 'trust']      # the trusted ones are counted, not listed
@@ -112,6 +126,7 @@ def batch_tools(rows, evidence=None):
         if not evidence:
             return {'error': 'the benchmark evidence file is not available here'}
         return {k: evidence[k] for k in ('question', 'wrong_means', 'B_batches', 'D_what_is_left', 'E_what_the_runs_return',
+                                         'F_two_goals', 'G_random_audits', 'H_fewer_guesses', 'I_single_guess_other_splits',
                                          'limits') if k in evidence} | {
             'all_1194_reactions_by_budget': evidence.get('A_eight_seed_models_geometry', {}).get('by_budget'),
             'second_ensemble_by_budget': evidence.get('C_five_model_sizes_geometry', {}).get('by_budget')}
@@ -120,8 +135,10 @@ def batch_tools(rows, evidence=None):
         'plan_dft_budget': (_tool('plan_dft_budget', f'Plan where the DFT runs go for the {len(rows)} reactions in front '
                                   'of the person. A fixed rule: re-generate what breaks a rule, run DFT on the most '
                                   'disputed, hold the other "check with DFT" reactions, trust the rest.',
-                                  {'budget': {'type': 'integer', 'minimum': 0, 'description': 'DFT runs the person can afford'}},
-                                  ['budget']), plan),
+                                  {'budget': {'type': 'integer', 'minimum': 0, 'description': 'DFT runs the person can afford'},
+                                   'goal': {'type': 'string', 'enum': ['find_errors', 'finish_ts']},
+                                   'audit': {'type': 'integer', 'minimum': 0, 'description': 'runs for random audits '
+                                             'of trusted reactions'}}, ['budget']), plan),
         'plan_evidence': (_tool('plan_evidence', 'How the planning rule did against reference TSs on the RDB7 benchmark '
                                 '(GoFlow guesses), with the limits of that test. Benchmark results, not predictions.', {}), evid),
     }
@@ -164,17 +181,98 @@ def absorb(conv, reply, tools):
             except Exception as e:                       # a bad argument or a failed tool: tell the model, keep going
                 out = {'error': f'{type(e).__name__}: {e}'}
         conv['steps'].append({'tool': name, 'input': args, 'output': out})
-        results.append({'type': 'tool_result', 'tool_use_id': b.get('id'), 'content': json.dumps(out, default=str),
+        results.append({'type': 'tool_result', 'tool_use_id': b.get('id'),
+                        'content': json.dumps({'call': len(conv['steps']), 'result': out}, default=str),
                         'is_error': isinstance(out, dict) and 'error' in out})
     conv['messages'].append({'role': 'user', 'content': results})
     return False
 
 
+_REF = re.compile(r'\{\{\s*(\d+)\s*:\s*([^}|\s]+)\s*(\|\s*%)?\s*\}\}')
+
+
+def _show(v, percent=False):
+    if isinstance(v, (list, tuple)):
+        return ', '.join(_show(x, percent) for x in v) if v else 'none'
+    if isinstance(v, bool) or v is None:
+        return {True: 'yes', False: 'no', None: 'not available'}[v]
+    if isinstance(v, (int, float)):
+        if percent:
+            return f'{100 * v:.1f}%'
+        return str(v) if isinstance(v, int) else f'{v:.4g}'
+    if isinstance(v, dict):
+        raise KeyError('a reference must point at a value or a list, not at a group of fields')
+    return str(v)
+
+
+def render(answer, steps):
+    """Replace every {{call:path}} reference with the value from that tool result.
+
+    Returns (text, filled, unresolved): filled is [{'reference', 'value'}]; a reference that points at nothing is
+    left in the text as [no such value: ...] and listed in unresolved, so a made-up reference is visible."""
+    filled, unresolved = [], []
+
+    def sub(m):
+        ref = m.group(0)
+        try:
+            v = steps[int(m.group(1)) - 1]['output']
+            if int(m.group(1)) < 1:
+                raise IndexError
+            for part in m.group(2).split('.'):
+                v = v[int(part)] if isinstance(v, (list, tuple)) else v[part]
+            text = _show(v, bool(m.group(3)))
+        except (KeyError, IndexError, ValueError, TypeError):
+            unresolved.append(ref)
+            return f'[no such value: {m.group(1)}:{m.group(2)}]'
+        filled.append({'reference': ref, 'value': text})
+        return text
+    return _REF.sub(sub, answer or ''), filled, unresolved
+
+
 def finish(conv):
-    """What a caller shows: the answer, the tool calls behind it, and the numbers that could not be traced."""
+    """What a caller shows: the answer with its references filled in, the tool calls behind it, and an account of
+    every number in it."""
     user_text = ' '.join(m['content'] for m in conv['messages'] if m['role'] == 'user' and isinstance(m['content'], str))
-    return {'answer': conv['answer'], 'steps': conv['steps'], 'model': conv['model'], 'stopped': conv['stopped'],
-            'numbers_not_from_tools': check_numbers(conv['answer'] or '', [s['output'] for s in conv['steps']], user_text)}
+    raw = conv['answer'] or ''
+    text, filled, unresolved = render(raw, conv['steps'])
+    typed_text = _REF.sub(' ', raw)                                   # what the model typed itself
+    outputs = [s['output'] for s in conv['steps']]
+    stripped = re.sub(r'(?m)^\s*\d+[.)]\s+', '', typed_text)
+    typed = []
+    for m in _NUM.finditer(stripped):
+        if m.group(0) not in typed:
+            typed.append(m.group(0))
+    not_from_person = check_numbers(typed_text, [], user_text)
+    from_person = [t for t in typed if t not in not_from_person]
+    rest = [t for t in typed if t not in from_person]
+    nowhere = [t for t in check_numbers(typed_text, outputs) if t in rest]
+    return {'answer': text, 'raw_answer': raw, 'steps': conv['steps'], 'model': conv['model'], 'stopped': conv['stopped'],
+            'numbers': {'filled_in_from_tool_results': filled, 'references_that_point_at_nothing': unresolved,
+                        'typed_and_in_the_persons_messages': from_person,
+                        'typed_and_found_in_a_tool_result': [t for t in rest if t not in nowhere],
+                        'typed_and_found_nowhere': nowhere},
+            'numbers_not_from_tools': nowhere}
+
+
+def describe_numbers(out):
+    """One or two plain sentences about where the numbers in an answer came from, for showing under it."""
+    n = out['numbers']
+    parts = []
+    if n['filled_in_from_tool_results']:
+        k = len(n['filled_in_from_tool_results'])
+        parts.append(f"{k} value{'s' if k != 1 else ''} above {'were' if k != 1 else 'was'} copied from tool results by "
+                     f"the program, not typed by Claude.")
+    if n['references_that_point_at_nothing']:
+        parts.append('Claude pointed at values that do not exist: ' + ', '.join(n['references_that_point_at_nothing']) + '.')
+    if n['typed_and_found_in_a_tool_result']:
+        parts.append('Typed by Claude and also present in a tool result (a weak check, a match can be chance): '
+                     + ', '.join(n['typed_and_found_in_a_tool_result']) + '.')
+    if n['typed_and_found_nowhere']:
+        parts.append('Typed by Claude and found in no tool result: ' + ', '.join(n['typed_and_found_nowhere'])
+                     + '. Do not rely on these.')
+    if not out['steps']:
+        parts.append('No tool was used for this answer.')
+    return ' '.join(parts)
 
 
 def run(question, send, tools=None, history=None, model=None, max_steps=MAX_STEPS):

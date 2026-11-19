@@ -206,23 +206,37 @@ try `tsso batch examples/batch`.
 You have many reactions and only a few DFT runs. Say how many, and get a plan:
 
 ```bash
-tsso plan tsso_batch --budget 5          # your own reactions: the folder `tsso batch` wrote; adds dft_plan.csv
-tsso plan --budget 5 --sample 40 --evaluate    # try it on 40 benchmark reactions and see how the picks did
+tsso plan tsso_batch --budget 5                 # your own reactions: the folder `tsso batch` wrote
+tsso plan --budget 5 --sample 40 --evaluate     # try it on 40 benchmark reactions and see how the picks did
+tsso plan tsso_batch --budget 40 --audit 30     # spend 30 of the runs on a random audit of the trusted reactions
+tsso plan tsso_batch --budget 40 --audit 30 --results runs.csv   # after the runs: what they show
+tsso irc-check --reactant r.xyz --product p.xyz --forward job_IRC_F_trj.xyz --backward job_IRC_B_trj.xyz --smiles reaction.smi
 ```
 
 The plan is a fixed rule, not an AI judgement: re-generate what still breaks a rule, give the runs to the reactions
 whose guesses disagree most, hold the other "check with DFT" reactions (not verified, so not to be used as they are),
-and trust the rest. The same reactions and budget always give the same plan. Tested afterwards against the RDB7
-reference TSs, in random batches of 40 reactions with 5 runs, 2.25 of the 5 picks had a wrong geometry on
-average, against 0.58 when picking at random and 3.98 with a perfect order
-([details and limits](https://github.com/tammy357/ts-second-opinion/blob/main/docs/RESULTS.md#where-should-the-dft-go-testing-the-budget-plan)).
-That is one generator and one dataset: check the order on reactions you know before relying on it elsewhere. After
-each run, confirm the TS with a reaction-path (IRC) calculation; one imaginary frequency is not enough.
+and trust the rest. The same reactions and budget always give the same plan. It writes `dft_plan.csv` and, for each
+pick, an ORCA input that runs the TS optimisation, the frequencies and the reaction path (IRC) in one job.
+
+- **How well it works.** Tested afterwards against the RDB7 reference TSs, in random batches of 40 reactions with 5
+  runs, 2.25 of the 5 picks had a wrong geometry on average, against 0.58 when picking at random and 3.98 with a
+  perfect order. With 2 guesses per reaction instead of 8 the first 10 picks held 5.0 wrong guesses instead of 9.
+- **Two goals.** `--goal find_errors` (default) checks the reactions most likely to be wrong; `--goal finish_ts` checks
+  the ones most likely to end in a usable TS. With 10 runs on the benchmark the first found 9 wrong guesses and 1
+  right one; the second found 3 and 7. You cannot have both.
+- **Errors all models share** are invisible to disagreement. `--audit N` spends N runs on trusted reactions drawn at
+  random; `--results` then gives an exact upper bound on how many of the other trusted reactions are wrong. It is wide
+  with few audits: about 34 clean audits are needed to bound 100 trusted reactions at 10%.
+- **After each run**, `tsso irc-check` tells you whether the reaction path joins this reactant to this product and,
+  given the SMILES, with the right handedness. One imaginary frequency is not enough, and a bonds-only check cannot
+  see a mirror-image TS.
+- **Limits.** One generator family and one dataset; no IRC and no new DFT was run for these tests; the ORCA input has
+  not been run by us. [Details, prior work and what is and is not new](https://github.com/tammy357/ts-second-opinion/blob/main/docs/RESULTS.md#where-should-the-dft-go-testing-the-budget-plan).
 
 `tsso agent "I have 40 reactions and 5 DFT runs, where should they go?"` (needs `ANTHROPIC_API_KEY`) lets you ask in
 your own words. Claude calls the planning rule and explains the result; it cannot choose the reactions, it is not
-sent coordinates or SMILES, and any number in its answer that is in no tool result is listed under the answer. The
-app has the same planner and chat (section 3b).
+sent coordinates or SMILES, and it is told to point at tool results instead of typing numbers, so the program copies
+the values in and lists any number Claude typed itself. The app has the same planner and chat (section 3b).
 
 ### From Python
 
@@ -241,7 +255,8 @@ print(result["verdict"], result["reasons"], result["smiles"])     # pass a mappe
   without overclaiming. In a clone, run `claude` here, approve the server, and try `/second-opinion 3509` or
   `/new-rule "A transferred hydrogen sits roughly on the line between donor and acceptor."`.
 - **Tools** include `triage_structures` (one reaction; the SMILES is optional), `triage_batch` (a folder or CSV),
-  `plan_dft_budget` (where a fixed number of DFT runs should go) with `plan_evidence`, `evaluate_predictions`,
+  `plan_dft_budget` (where a fixed number of DFT runs should go) with `plan_evidence`, `review_dft_results` and
+  `irc_check`, `evaluate_predictions`,
   `certify_trust`, `gate_check` and `save_rule`.
 
 ### Was this verdict right?
