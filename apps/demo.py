@@ -183,7 +183,7 @@ def _(CHEM_BACKEND, EXAMPLES, ROOT, mo):
             mo.md('Works with any TS generator and any elements. Give one or more guesses: several (models, seeds or '
                   'samples) add the model-disagreement signal. With a SMILES, charge and multiplicity are read from it.'),
             smiles_in, mo.hstack([reactant_in, product_in, guesses_in], justify='start'),
-            mo.hstack([order_in, charge_in, mult_in], justify='start'), check_btn,
+            mo.hstack([order_in] + ([charge_in, mult_in] if _can_infer else []), justify='start'), check_btn,
             mo.accordion({'No files to hand? Download a ready example and upload it here': _files})]),
     })
     mo.vstack([mo.md('## 1 · Check a TS guess'), mode])
