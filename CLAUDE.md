@@ -14,6 +14,7 @@
 - Example inputs live in examples/. `tsso check ... --report r.html` writes a one-file HTML report card.
 - The app (apps/demo.py) is verdict-first: examples, upload, linked 3D views, Rule Studio replay, trust slider.
   It also runs in the browser (docs/app, built by scripts/build_wasm.py); there tsso/smiles_lite.py stands in for RDKit.
+  .github/workflows/rebuild-site.yml rebuilds docs/ (page and app) on main whenever their inputs change.
 - Extras: tsso/mirror_test.py (does a metric see handedness?), tsso/stereo_edit.py (experimental local inversion of
   partly flipped guesses; not in the pipeline), tsso/audit.py (SMILES vs geometry consistency).
 - FK-Flow comparison: scripts/fkflow_import.py (run where Zenodo is reachable) then scripts/fkflow_compare.py.

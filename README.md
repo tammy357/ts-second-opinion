@@ -323,7 +323,7 @@ python scripts/xtb_prospective.py mirror 40; python scripts/xtb_prospective.py v
 pip install -e ".[dft]"; python scripts/dft_prospective.py mirror:3509 guess:97 guess:5877   # new DFT (about 15 min per job)
 python scripts/dft_summary.py; python scripts/make_dft_figure.py   # -> results/dft_summary.json, results/fig_dft.png
 python scripts/build_site.py             # the static showcase in docs/ (GitHub Pages)
-python scripts/build_wasm.py             # the in-browser app in docs/app/
+python scripts/build_wasm.py             # the in-browser app in docs/app/ (both rebuild by themselves on main)
 ```
 
 Writing new rules needs the `claude` CLI or an `ANTHROPIC_API_KEY` (`pip install -e ".[api]"`). Data files are derived

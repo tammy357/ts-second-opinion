@@ -1,0 +1,59 @@
+name: rebuild site
+# Keeps the showcase page (docs/) and the in-browser app (docs/app/) in step with the code: when anything they are
+# built from changes on main, this rebuilds them and commits docs/ as github-actions[bot]. GitHub Pages then publishes
+# the new version as usual. It can also be run by hand from the Actions tab.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "tsso/**"
+      - "apps/**"
+      - "results/**"
+      - "examples/**"
+      - "benchmark/**"
+      - "data/**"
+      - "scripts/build_site.py"
+      - "scripts/build_wasm.py"
+      - ".github/workflows/rebuild-site.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write          # to commit the rebuilt docs/
+
+concurrency:
+  group: rebuild-site
+  cancel-in-progress: true # a newer push rebuilds from newer code
+
+env:
+  MARIMO_VERSION: "0.25.2" # the version the app is exported with; bump it on purpose, then check the live app
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e . "marimo==${MARIMO_VERSION}"
+      - run: python scripts/build_site.py
+      - run: python scripts/build_wasm.py
+      - name: Commit the rebuilt page and app, if anything changed
+        run: |
+          git add docs
+          if git diff --cached --quiet; then
+            echo "The page and the app are already up to date."
+            exit 0
+          fi
+          git diff --cached --stat
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -q -m "Rebuild the showcase page and the in-browser app" -m "From ${GITHUB_SHA::7}."
+          for attempt in 1 2 3; do
+            git pull -q --rebase origin main && git push -q origin HEAD:main && exit 0
+            sleep 10
+          done
+          echo "Could not push the rebuilt docs/; run this workflow again from the Actions tab."
+          exit 1
