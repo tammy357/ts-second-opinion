@@ -46,6 +46,7 @@ footer { color:var(--ink2); font-size:12px; margin-top:20px; }
 
 <section><h2>Why</h2><ul><li>0 of 8 model guesses pass every rule.</li><li>Rejected guesses broke: product_stereo (8).</li><li>Still breaks &quot;product_stereo&quot;: C2 has inverted handedness vs product (signed volume +0.75 at TS, -0.72 in product).</li><li>Its mirror image was tried but also breaks a stereo rule: only some stereocentres are inverted (the TS of a diastereomer, which has a different energy), so mirroring would invert the correct ones too and cannot repair it.</li><li>Models disagree most about O6-H10 (not a forming/breaking bond): spread 0.09 A.</li><li>Mean disagreement of the chosen guess with the other models: 0.032 A (review cut-off 0.109 A).</li></ul></section>
 
+
 <section><h2>Raw guess and recommended guess <span class="tag">drag to rotate; the two views move together</span></h2>
 <div class="views">
   <div class="view"><div class="cap">Best raw guess (guess 4)</div><div id="v1" class="viewer"></div></div>
@@ -98,9 +99,10 @@ end
 end
 
 * xyzfile 0 1 recommended_ts.xyz
-</pre></details></section>
+</pre></details>
+<p style="margin:12px 0 0"><a href="https://github.com/tammy357/ts-second-opinion/issues/new?template=verdict_feedback.yml&amp;title=Verdict+feedback+%28red%29&amp;verdict=red&amp;details=Verdict%3A+red%0ARules+broken+by+the+recommended+guess%3A+product_stereo%0AMirror-image+repair%3A+no%0ATS+guesses+given%3A+8&amp;version=0.3.0">Was this verdict right? Tell us</a> <span class="muted">(opens a GitHub issue form; it shares the verdict, never your structures, and nothing is sent until you submit it)</span></p></section>
 
-<footer>TS Second Opinion 0.2.0 · 2026-10-23 · github.com/tammy357/ts-second-opinion · Results are screening
+<footer>TS Second Opinion 0.3.0 · 2026-11-19 · github.com/tammy357/ts-second-opinion · Results are screening
 advice, not a substitute for a TS optimisation. Please cite TS Second Opinion, GoFlow and RDB7.</footer>
 </main>
 <script>/*! For license information please see 3Dmol-min.js.LICENSE.txt */
