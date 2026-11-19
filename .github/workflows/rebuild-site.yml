@@ -14,6 +14,7 @@ on:
       - "data/**"
       - "scripts/build_site.py"
       - "scripts/build_wasm.py"
+      - "scripts/build_planner.py"
       - ".github/workflows/rebuild-site.yml"
   workflow_dispatch:
 
@@ -40,6 +41,7 @@ jobs:
       - run: pip install -e . "marimo==${MARIMO_VERSION}" uv     # the html-wasm export needs uv
       - run: python scripts/build_site.py
       - run: python scripts/build_wasm.py
+      - run: python scripts/build_planner.py
       - name: Commit the rebuilt page and app, if anything changed
         if: github.ref == 'refs/heads/main'      # a manual run on another branch only checks that the build works
         run: |

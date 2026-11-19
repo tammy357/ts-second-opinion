@@ -16,6 +16,8 @@
   Evidence and limits: results/plan_evaluation.json (GoFlow/RDB7 only; no IRC or new DFT was run for it).
   tsso/agent.py is the chat agent: tools decide, structures are redacted, numbers are written as {{call:path}}
   references and filled in by `render`; typed numbers are listed (check_numbers is the weak fallback).
+- Planner page: docs/planner/index.html is built by scripts/build_planner.py from apps/planner/ (template.html and
+  planner.js, a JavaScript port of tsso/plan.py). Change the rule in both; tests/test_planner_page.py compares them.
 - CLI equivalents: tsso check / batch / plan / irc-check / agent / evaluate / certify / triage / gate / author / audit; tsso mcp-config and
   tsso skill --install connect agents. Python: `from tsso import second_opinion` (pass None for the SMILES to infer it).
 - Outside a clone (pip install from git), tsso/paths.py fetches benchmark data on first use and writes to ./tsso_output.

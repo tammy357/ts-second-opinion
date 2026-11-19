@@ -22,6 +22,11 @@
   own Anthropic API key). Claude can only call the planning rule, is not sent coordinates or SMILES, and points at
   tool results instead of typing numbers; any number it types itself is listed under the answer. Not yet tried with
   a live model.
+- **A planner page for the showcase site** (`docs/planner/`, built by `scripts/build_planner.py`): one small HTML file
+  with the planning rule in JavaScript, so it opens at once on a phone. Every reaction in the batch is drawn as a mark,
+  with sliders for the budget and the audit, a switch that shows which guesses were really wrong, a place to mark runs
+  right or wrong, ready answers to common questions, and the chat with Claude. A test keeps its rule equal to the
+  Python one.
 - RESULTS.md lists what the plan does not do and what is and is not new compared with published work.
 
 ## 0.3.0 (2026-11-19)

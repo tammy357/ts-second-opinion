@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DFT Budget Planner</title>
+<style>
+/* Layout idea: one column, controls on top, the whole batch drawn as one strip of marks so the plan is visible at a
+   glance; same tokens as the TS Second Opinion showcase page. */
+:root { --bg:#f7f7f5; --surface:#ffffff; --ink:#151513; --ink2:#55534e; --line:#e3e2de; --soft:#f1f0ec; --accent:#2a6fd6;
+  --green:#137333; --green-bg:#e6f4ea; --amber:#9a5b00; --amber-bg:#fdf1dc; --red:#b3261e; --red-bg:#fbe9e7;
+  --audit:#6a45c2; --audit-bg:#efe9fb; --on-accent:#ffffff;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { color-scheme: dark;
+  --bg:#131312; --surface:#1c1c1a; --ink:#f2f1ed; --ink2:#b4b2ab; --line:#33322e; --soft:#262522; --accent:#7fb0ff;
+  --green:#7fd68f; --green-bg:#173a20; --amber:#f2c063; --amber-bg:#3d2e10; --red:#f28b82; --red-bg:#43201d;
+  --audit:#c0a8ff; --audit-bg:#2c2444; --on-accent:#10131a; } }
+:root[data-theme="dark"] { color-scheme: dark;
+  --bg:#131312; --surface:#1c1c1a; --ink:#f2f1ed; --ink2:#b4b2ab; --line:#33322e; --soft:#262522; --accent:#7fb0ff;
+  --green:#7fd68f; --green-bg:#173a20; --amber:#f2c063; --amber-bg:#3d2e10; --red:#f28b82; --red-bg:#43201d;
+  --audit:#c0a8ff; --audit-bg:#2c2444; --on-accent:#10131a; }
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.55 var(--font); }
+main { max-width: 920px; margin: 0 auto; padding: 24px 16px 64px; display: flex; flex-direction: column; gap: 22px; }
+a { color: var(--accent); }
+h1 { font-size: clamp(28px, 6vw, 40px); line-height: 1.12; margin: 4px 0 8px; letter-spacing: -.01em; text-wrap: balance; }
+h2 { font-size: 21px; margin: 0 0 4px; text-wrap: balance; }
+p { margin: 0; }
+.kicker { font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink2); }
+.lede { font-size: 17px; max-width: 66ch; }
+.muted { color: var(--ink2); } .small { font-size: 13.5px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; }
+.row { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
+.pills { display: flex; gap: 8px; flex-wrap: wrap; }
+button, .btn { font: inherit; }
+.pill, .btn { padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+  cursor: pointer; font-size: 14.5px; text-decoration: none; display: inline-block; }
+.pill[aria-pressed="true"], .btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.slider { flex: 1 1 260px; display: flex; flex-direction: column; gap: 2px; }
+#more .slider { flex: none; }
+.slider label { display: flex; justify-content: space-between; gap: 12px; font-size: 14.5px; }
+.slider output { font-weight: 700; font-variant-numeric: tabular-nums; }
+input[type=range] { width: 100%; accent-color: var(--accent); height: 28px; }
+.big output { font-size: 22px; }
+details > summary { cursor: pointer; color: var(--ink2); font-size: 14.5px; }
+details[open] > summary { margin-bottom: 10px; }
+
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
+.tile .v { font-size: 30px; font-weight: 750; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.tile .n { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 650; }
+.tile .h { color: var(--ink2); font-size: 12.5px; }
+
+/* one mark per reaction */
+.strip { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+.m { width: 24px; height: 24px; padding: 0; border: 2px solid transparent; background: none; cursor: pointer; display: grid; place-items: center;
+  font-size: 11px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; color: var(--on-accent); position: relative; }
+.m.sw { width: 16px; height: 16px; cursor: default; flex: none; font-size: 0; }
+.m.run { background: var(--accent); border-radius: 6px; }
+.m.audit { background: var(--audit-bg); border: 2px dashed var(--audit); border-radius: 6px; color: var(--audit); }
+.m.trust { background: var(--green); border-radius: 50%; transform: scale(.62); }
+.m.hold { background: var(--amber-bg); border-color: var(--amber); border-radius: 50%; transform: scale(.8); }
+.m.regen { background: var(--red-bg); border-color: var(--red); border-radius: 3px; transform: rotate(45deg) scale(.68); }
+.m.nocheck { background: var(--soft); border-color: var(--ink2); border-radius: 3px; color: var(--ink2); }
+.m.wrong::after { content: ""; position: absolute; inset: -6px; border: 2.5px solid var(--ink); border-radius: 50%; }
+.m.trust.wrong::after { inset: -9px; border-width: 4px; } .m.hold.wrong::after { inset: -7px; border-width: 3px; }
+.m.sel { box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--ink); }
+.axis { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--ink2); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--ink2); align-items: center; }
+.legend span { display: inline-flex; align-items: center; gap: 7px; }
+.detail { background: var(--soft); border-radius: 10px; padding: 10px 12px; font-size: 14.5px; min-height: 44px; }
+.say { border-left: 4px solid var(--accent); padding: 2px 0 2px 12px; max-width: 70ch; }
+.truth { background: var(--soft); border-radius: 10px; padding: 12px 14px; max-width: 76ch; }
+.switch { display: flex; gap: 10px; align-items: center; font-size: 14.5px; cursor: pointer; }
+.switch input { width: 20px; height: 20px; accent-color: var(--accent); }
+
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 6px 12px 6px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--ink2); font-weight: 600; font-size: 13px; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tag { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; font-weight: 600; }
+
+.runs { display: flex; flex-direction: column; gap: 6px; }
+.runrow { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); padding: 6px 0; }
+.rw button { padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; font-size: 13.5px; }
+.rw button[aria-pressed="true"].r { background: var(--green-bg); border-color: var(--green); color: var(--green); font-weight: 700; }
+.rw button[aria-pressed="true"].w { background: var(--red-bg); border-color: var(--red); color: var(--red); font-weight: 700; }
+
+.talk { display: flex; flex-direction: column; gap: 10px; }
+.msg { border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; background: var(--surface); max-width: 76ch; }
+.msg .who { font-size: 12.5px; color: var(--ink2); letter-spacing: .03em; text-transform: uppercase; margin-bottom: 2px; }
+.msg.q { background: var(--soft); align-self: flex-end; }
+.msg .trace { font-size: 12.5px; color: var(--ink2); margin-top: 8px; border-top: 1px dashed var(--line); padding-top: 6px; }
+.msg p + p { margin-top: 8px; }
+input[type=password], input[type=text], textarea { font: inherit; padding: 9px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); width: 100%; }
+.ask { display: flex; gap: 8px; flex-wrap: wrap; } .ask input { flex: 1 1 240px; }
+ul.plain { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; max-width: 76ch; }
+.err { color: var(--red); }
+footer { color: var(--ink2); font-size: 13.5px; }
+@media (prefers-reduced-motion: no-preference) { .m { transition: transform .15s ease, background-color .15s ease; } }
+</style>
+</head>
+<body>
+<main>
+<header>
+  <div class="kicker">TS Second Opinion · Open Scientific Intelligence Hackathon 2026</div>
+  <h1>Where should the DFT go?</h1>
+  <p class="lede">You have machine-learned transition-state guesses for many reactions and DFT time for only a few. Set
+  the number of runs you can afford and see which reactions to run, which to trust, which to hold back and which to
+  re-generate. The plan is a fixed rule, not an AI judgement: the same reactions and budget always give the same plan.</p>
+</header>
+
+<section class="card" aria-label="Your reactions and your budget">
+  <div class="row">
+    <div class="pills" role="group" aria-label="Which reactions">
+      <button class="pill" id="src-bench" aria-pressed="true">Example reactions</button>
+      <button class="pill" id="src-own" aria-pressed="false">My own verdicts.csv</button>
+    </div>
+    <button class="btn" id="redraw">Draw another batch</button>
+  </div>
+  <div id="own-box" hidden>
+    <input type="file" id="file" accept=".csv,text/csv" aria-label="verdicts.csv">
+    <p class="small muted" style="margin-top:6px">Make it with <code>tsso batch my_reactions/</code>. The file is read in this
+    browser tab and goes nowhere. Only ids, verdicts and disagreement values are used, no structures.</p>
+    <p class="small err" id="file-err"></p>
+  </div>
+  <div class="row">
+    <div class="slider big"><label for="budget">DFT runs you can afford <output id="budget-out"></output></label>
+      <input type="range" id="budget" min="0" max="30" step="1" value="5"></div>
+    <div class="slider" id="n-box"><label for="n">Reactions in the batch <output id="n-out"></output></label>
+      <input type="range" id="n" min="10" max="200" step="10" value="40"></div>
+  </div>
+  <details id="more">
+    <summary>More choices: what the runs are for, and auditing the trusted reactions</summary>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="pills" role="group" aria-label="What the runs are for">
+        <button class="pill" id="goal-find" aria-pressed="true">Find the wrong guesses</button>
+        <button class="pill" id="goal-finish" aria-pressed="false">Finish as many TSs as I can</button>
+      </div>
+      <p class="small muted" id="goal-note"></p>
+      <div class="slider"><label for="audit">Of those runs, spend on a random audit of trusted reactions <output id="audit-out"></output></label>
+        <input type="range" id="audit" min="0" max="30" step="1" value="0"></div>
+      <p class="small muted" id="audit-note"></p>
+    </div>
+  </details>
+</section>
+
+<section aria-label="The plan" style="display:flex;flex-direction:column;gap:14px">
+  <div class="tiles" id="tiles"></div>
+  <div class="card">
+    <h2>Every reaction in the batch</h2>
+    <div class="axis"><span id="axis-left">← the guesses disagree most</span><span>the guesses agree most →</span></div>
+    <div class="strip" id="strip"></div>
+    <div class="legend" id="legend"></div>
+    <div class="detail" id="detail" aria-live="polite"></div>
+    <label class="switch" id="reveal-box"><input type="checkbox" id="reveal"> Show which guesses were really wrong
+      (from the reference TS; never used to make the plan)</label>
+    <div class="truth" id="truth" hidden></div>
+  </div>
+  <p class="say" id="say"></p>
+  <details>
+    <summary>The plan as a table</summary>
+    <div class="row" style="margin-bottom:8px"><button class="btn" id="copy">Copy the plan as CSV</button><span class="small muted" id="copied"></span></div>
+    <div class="tablewrap"><table id="table"></table></div>
+  </details>
+</section>
+
+<section class="card" aria-label="After the runs">
+  <h2>After the runs</h2>
+  <p class="muted" style="max-width:70ch">Mark each run when it finishes. Right means one imaginary frequency <em>and</em> a
+  reaction path (IRC) that joins this reactant to this product with the right handedness; <code>tsso irc-check</code> tells you.</p>
+  <div class="row"><button class="btn" id="fill" hidden>Fill in what the reference TS says</button><button class="btn" id="clear">Clear</button></div>
+  <div class="runs" id="runs"></div>
+  <p class="say" id="outcome" aria-live="polite"></p>
+</section>
+
+<section class="card" aria-label="Questions">
+  <h2>Ask about this plan</h2>
+  <div class="pills" id="chips"></div>
+  <div class="talk" id="talk" aria-live="polite"></div>
+  <details id="claude">
+    <summary>Ask Claude in your own words (needs your own Anthropic API key)</summary>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <input type="password" id="key" placeholder="sk-ant-…" autocomplete="off" aria-label="Your Anthropic API key">
+      <form class="ask" id="ask-form"><input type="text" id="ask" placeholder="For example: what changes if I can afford 10 runs?" aria-label="Your question">
+        <button class="btn primary" id="send" type="submit">Ask Claude</button></form>
+      <ul class="plain small muted">
+        <li>Claude cannot choose the reactions. It can only call the same fixed rule you see above, for this batch, and read the benchmark results.</li>
+        <li>It is sent ids, verdicts and disagreement values. It is never sent structures, and never the reference answers.</li>
+        <li>It is told to point at tool results instead of typing numbers; this page copies the values in and lists any number Claude typed itself.</li>
+        <li>Your key stays in this tab and is sent only to api.anthropic.com. Claude can be wrong; the plan above is the record.</li>
+      </ul>
+    </div>
+  </details>
+</section>
+
+<section class="card" aria-label="How well the rule works">
+  <h2>How well does the rule work?</h2>
+  <p class="muted" style="max-width:72ch">Tested afterwards against reference transition states: 1,194 RDB7 reactions, 8 GoFlow
+  guesses each. The plan never sees a reference. With 5 DFT runs per batch, over 5,000 random batches:</p>
+  <div class="tablewrap"><table id="ev1"></table></div>
+  <p class="muted" style="max-width:72ch" id="ev-goals"></p>
+  <h2 style="margin-top:6px">What it cannot do</h2>
+  <ul class="plain" id="limits"></ul>
+  <p class="small muted" style="max-width:76ch">Sending machine-learned TS guesses to DFT by a confidence score is not new
+  (OA-ReactDiff, 2023), and neither are committee disagreement, random audits or bond checks on reaction paths. What we did
+  not find elsewhere: a budget plan that works on any generator's guesses after the fact, an exact error bound from a random
+  audit inside the same budget, and a reaction-path check that also compares handedness.
+  <a href="https://github.com/tammy357/ts-second-opinion/blob/main/docs/RESULTS.md#where-should-the-dft-go-testing-the-budget-plan">Full results, limits and prior work</a>.</p>
+</section>
+
+<footer>
+  <a href="../">TS Second Opinion</a> · <a href="../app/">the full app</a> ·
+  <a href="https://github.com/tammy357/ts-second-opinion">code on GitHub (MIT)</a> · on your own machine:
+  <code>pip install ts-second-opinion</code>, then <code>tsso batch</code> and <code>tsso plan</code>.
+</footer>
+</main>
+
+<script>/*__PLANNER_JS__*/</script>
+<script>
+(function () {
+'use strict';
+const DATA = /*__DATA__*/null, EV = /*__EVIDENCE__*/null, SYSTEM = /*__SYSTEM__*/'', MODEL = /*__MODEL__*/'';
+const P = self.Planner, $ = id => document.getElementById(id);
+const VERD = ['green', 'amber', 'red'];
+const ALL = DATA.map(r => ({id: String(r[0]), verdict: VERD[r[1]], disagreement_A: r[2], endpoint_distance_A: r[3], mirror_repaired: !!r[4], rules_broken: r[7] || ''}));
+const TRUTH = Object.fromEntries(DATA.map(r => [String(r[0]), {geo: !!r[5], hand: !!r[6]}]));
+const S = {source: 'bench', n: 40, budget: 5, draw: 1, goal: 'find_errors', audit: 0, reveal: false, own: null, outcomes: {}, sel: null, plan: null, rows: []};
+const CLS = it => it.audit ? 'audit' : {run_dft: 'run', trust: 'trust', hold: 'hold', regenerate: 'regen', not_checked: 'nocheck'}[it.action];
+const NAME = it => it.audit ? 'Run DFT (random audit)' : P.ACTION_LABEL[it.action];
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
+const wrongOf = id => TRUTH[id] && (TRUTH[id].geo || TRUTH[id].hand);
+const s_ = (n, one, many) => n === 1 ? one : many;
+
+function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+function batch() {
+  if (S.source === 'own') return S.own || [];
+  const r = rng(S.draw * 7919 + 13), idx = ALL.map((_, i) => i);
+  for (let i = 0; i < S.n; i++) { const j = i + Math.floor(r() * (idx.length - i)); [idx[i], idx[j]] = [idx[j], idx[i]]; }
+  return idx.slice(0, S.n).sort((a, b) => a - b).map(i => ALL[i]);
+}
+const bench = () => S.source === 'bench';
+
+function compute() {
+  S.rows = batch();
+  S.audit = Math.min(S.audit, S.budget);
+  S.plan = P.plan(S.rows, S.budget, {goal: S.goal, audit: S.audit, seed: S.draw});
+  S.outcomes = {}; S.sel = null;
+  draw();
+}
+
+function swatch(cls, text) { return `<span class="m sw ${cls}" aria-hidden="true">${text || ''}</span>`; }
+
+function draw() {
+  const p = S.plan;
+  $('budget-out').textContent = S.budget; $('n-out').textContent = S.n; $('audit-out').textContent = S.audit;
+  $('audit').max = Math.max(S.budget, 1); $('audit').value = S.audit; $('audit').disabled = S.budget === 0;
+  $('n-box').hidden = !bench(); $('redraw').hidden = !bench(); $('own-box').hidden = bench();
+  $('reveal-box').hidden = !bench(); $('fill').hidden = !bench();
+  $('src-bench').setAttribute('aria-pressed', bench()); $('src-own').setAttribute('aria-pressed', !bench());
+  $('goal-find').setAttribute('aria-pressed', S.goal === 'find_errors'); $('goal-finish').setAttribute('aria-pressed', S.goal === 'finish_ts');
+  const g10 = EV.F_two_goals.by_budget.find(r => r.budget === 10);
+  $('goal-note').textContent = S.goal === 'find_errors'
+    ? `The runs go to the reactions most likely to be wrong. On the benchmark, 10 runs found ${g10.find_errors.wrong_guesses_found} wrong guesses, so most of those runs end in "re-generate this one".`
+    : `The runs go to the reactions that need a check and are most likely to be right. On the benchmark, ${g10.finish_ts.picks_with_a_right_guess} of 10 such picks had a right guess, but only ${g10.finish_ts.wrong_guesses_found} wrong guesses were found, against ${g10.find_errors.wrong_guesses_found}.`;
+  if (!p || p.error || !S.rows.length) {
+    $('tiles').innerHTML = ''; $('strip').innerHTML = ''; $('legend').innerHTML = ''; $('table').innerHTML = ''; $('runs').innerHTML = ''; $('truth').hidden = true;
+    $('say').textContent = bench() ? (p && p.error ? p.error : '') : 'Choose your verdicts.csv to see a plan for your own reactions.';
+    $('detail').textContent = ''; $('outcome').textContent = ''; $('audit-note').textContent = ''; chips(); return;
+  }
+  // audit note
+  const pop = p.trusted_population;
+  if (p.of_which_random_audits) $('audit-note').textContent = `If all ${p.of_which_random_audits} ${s_(p.of_which_random_audits, 'audit comes', 'audits come')} back right, at most ${p.bound_if_all_audits_right} of the other ${p.counts.trust} trusted reactions are wrong (95% confidence, exact for a random draw). Each audit is a run not spent on a doubtful reaction.`;
+  else { const need = pop > 1 ? P.auditsNeeded(pop, 0.10) : null;
+    $('audit-note').textContent = 'Model disagreement cannot see an error that every model makes. A random audit can: it checks trusted reactions drawn by lot.' +
+      (need ? ` To bound the ${pop} trusted reactions here at 10% you would need ${need} audits that all come back right, so a few runs buy only a wide bound.` : ''); }
+  // tiles
+  const T = [['run', 'Run DFT', p.counts.run_dft - p.of_which_random_audits, S.goal === 'find_errors' ? 'most disputed first' : 'least disputed first'],
+             ['audit', 'Random audit', p.of_which_random_audits, 'trusted, drawn by lot'], ['trust', 'Trust', p.counts.trust, 'pass the rules, guesses agree'],
+             ['hold', 'Hold', p.counts.hold, 'need a check, beyond the budget'], ['regen', 'Re-generate', p.counts.regenerate, 'still break a rule'],
+             ['nocheck', 'Fix the input', p.counts.not_checked, 'could not be checked']];
+  $('tiles').innerHTML = T.filter(t => t[2] > 0 || ['run', 'trust', 'hold', 'regen'].includes(t[0])).map(t =>
+    `<div class="tile"><div class="n">${swatch(t[0])}${t[1]}</div><div class="v">${t[2]}</div><div class="h">${t[3]}</div></div>`).join('');
+  // strip: reactions that break a rule first, then by disagreement, single guesses last
+  const key = it => it.action === 'regenerate' ? 0 : it.action === 'not_checked' ? 3 : it.disagreement_A === null ? 2 : 1;
+  const order = p.plan.slice().sort((a, b) => key(a) - key(b) || (b.disagreement_A || 0) - (a.disagreement_A || 0) || (a.id < b.id ? -1 : 1));
+  $('strip').innerHTML = order.map(it => {
+    const w = S.reveal && bench() && wrongOf(it.id);
+    return `<button class="m ${CLS(it)}${w ? ' wrong' : ''}${S.sel === it.id ? ' sel' : ''}" data-id="${esc(it.id)}" aria-label="Reaction ${esc(it.id)}: ${NAME(it)}${w ? ', really wrong' : ''}">${it.action === 'run_dft' ? it.dft_order : ''}</button>`; }).join('');
+  $('axis-left').textContent = p.counts.regenerate ? '← break a rule, then the guesses disagree most' : '← the guesses disagree most';
+  $('legend').innerHTML = [['run', 'run DFT, in this order', '1'], ...(p.of_which_random_audits ? [['audit', 'random audit', '']] : []), ['trust', 'trust'], ['hold', 'hold'],
+    ...(p.counts.regenerate ? [['regen', 're-generate']] : []), ...(p.counts.not_checked ? [['nocheck', 'fix the input']] : [])].map(l => `<span>${swatch(l[0], l[2])}${l[1]}</span>`).join('') +
+    (S.reveal && bench() ? `<span><span class="m sw trust wrong" style="margin:0 6px" aria-hidden="true"></span>ringed: really wrong</span>` : '');
+  detail();
+  $('say').textContent = P.explain(p);
+  // truth
+  const tb = $('truth'); tb.hidden = !(S.reveal && bench());
+  if (!tb.hidden) {
+    const runs = p.plan.filter(it => it.action === 'run_dft' && !it.audit), tr = p.plan.filter(it => it.action === 'trust'), hold = p.plan.filter(it => it.action === 'hold');
+    const can = p.plan.filter(it => ['run_dft', 'trust', 'hold'].includes(it.action));
+    const hit = runs.filter(it => wrongOf(it.id)).length, rand = runs.length * can.filter(it => wrongOf(it.id)).length / Math.max(can.length, 1);
+    const missed = tr.filter(it => wrongOf(it.id)).length, held = hold.filter(it => wrongOf(it.id)).length;
+    tb.innerHTML = `<b>Against the reference TS, for this batch.</b> ` +
+      (runs.length ? `${hit} of the ${runs.length} ${s_(runs.length, 'reaction', 'reactions')} picked for DFT really had a wrong guess; picking ${runs.length} at random would find ${rand.toFixed(1)} on average. ` : 'No run was planned. ') +
+      (hold.length ? `${held} of the ${hold.length} on hold ${s_(held, 'is', 'are')} wrong. ` : '') +
+      `Among the ${tr.length} trusted, ${missed} ${s_(missed, 'is', 'are')} wrong: the plan cannot see ${s_(missed, 'this one', 'these')}, because the models agreed.` +
+      ` <span class="muted">Wrong means the geometry is more than 0.2 Å (D-MAE) from the reference TS, or a stereocentre is the wrong way round.</span>`;
+  }
+  // table
+  $('table').innerHTML = '<tr><th>What to do</th><th>Reaction</th><th class="num">Disagreement (Å)</th><th>Why</th></tr>' + p.plan.map(it =>
+    `<tr><td><span class="tag">${swatch(CLS(it))}${NAME(it)}${it.dft_order ? ' #' + it.dft_order : ''}</span></td><td>${esc(it.id)}</td><td class="num">${it.disagreement_A === null ? '' : P.f3(it.disagreement_A)}</td><td>${esc(it.why)}</td></tr>`).join('');
+  runsBox(); chips();
+}
+
+function detail() {
+  const it = S.plan.plan.find(x => x.id === S.sel);
+  if (!it) { $('detail').innerHTML = '<span class="muted">Tap a mark to see that reaction.</span>'; return; }
+  const t = S.reveal && bench() && TRUTH[it.id];
+  $('detail').innerHTML = `<b>Reaction ${esc(it.id)}: ${NAME(it)}${it.dft_order ? ' #' + it.dft_order : ''}.</b> ${esc(it.why.charAt(0).toUpperCase() + it.why.slice(1))}.` +
+    (t ? ` <span class="muted">Reference TS: ${t.geo ? 'wrong geometry' : t.hand ? 'wrong handedness' : 'the guess is right'}.</span>` : '');
+}
+
+function runsBox() {
+  const p = S.plan, sent = p.plan.filter(it => it.action === 'run_dft');
+  $('runs').innerHTML = sent.length ? sent.map(it => `<div class="runrow"><span class="tag">${swatch(CLS(it))}#${it.dft_order} · reaction ${esc(it.id)}${it.audit ? ' · audit' : ''}</span>
+    <span class="rw"><button class="r" data-id="${esc(it.id)}" data-o="right" aria-pressed="${S.outcomes[it.id] === 'right'}">Right</button>
+    <button class="w" data-id="${esc(it.id)}" data-o="wrong" aria-pressed="${S.outcomes[it.id] === 'wrong'}">Wrong</button></span></div>`).join('')
+    : '<p class="muted">No run is planned yet. Raise the budget.</p>';
+  const r = P.review(p, S.outcomes); let t = '';
+  if (r.runs_reported) {
+    if (r.targeted.reported) t += `Targeted runs: ${r.targeted.right} right, ${r.targeted.wrong} wrong` + (r.targeted.to_regenerate.length ? ` (re-generate ${r.targeted.to_regenerate.join(', ')}).` : '.') + ' ';
+    if (!r.audits) t += `These runs were picked because they looked doubtful, so they give no error rate for the ${r.not_run} trusted reactions. Plan a random audit to get one.`;
+    else if (r.at_most_wrong === null) t += `${r.audits - r.audits_reported} audit ${s_(r.audits - r.audits_reported, 'run is', 'runs are')} not marked yet. The bound needs all of them: leaving out failed ones would bias it.`;
+    else t += `${r.audits_wrong} of ${r.audits} randomly audited trusted reactions ${s_(r.audits_wrong, 'was', 'were')} wrong, so at most ${r.at_most_wrong} of the other ${r.not_run} are (95% confidence, exact for a random draw). That is a bound, not an estimate` +
+      (bench() ? `; in this batch the true number is ${p.plan.filter(it => it.action === 'trust' && wrongOf(it.id)).length}.` : '.');
+  }
+  $('outcome').textContent = t; $('outcome').hidden = !t;
+}
+
+// ---- questions answered by this page (no AI)
+function answers() {
+  const p = S.plan, b40 = EV.B_batches.find(b => b.batch_size === 40), D0 = EV.D_what_is_left.rows[0], x = EV.E_what_the_runs_return.gfn2_xtb;
+  const runs = p.plan.filter(it => it.action === 'run_dft' && !it.audit);
+  const more = P.plan(S.rows, S.budget + 5, {goal: S.goal, audit: S.audit, seed: S.draw});
+  const added = more.run_dft.filter(i => !p.run_dft.includes(i));
+  const one = Object.values(x.by_verdict).reduce((a, v) => a + v.one_imaginary_frequency, 0), notref = Object.values(x.by_verdict).reduce((a, v) => a + v.one_imaginary_frequency_but_not_the_reference_ts, 0);
+  return [
+    ['Why these reactions?', runs.length ? [
+      `Each reaction has several guesses from different models. Where the guesses disagree, at least some of them must be wrong, so that is where a check is most likely to find an error.`,
+      `The first pick, reaction ${runs[0].id}, has guesses that differ by ${P.f3(runs[0].disagreement_A === null ? 0 : runs[0].disagreement_A)} Å on average` + (runs.length > 1 && runs[runs.length - 1].disagreement_A !== null ? `; the last, reaction ${runs[runs.length - 1].id}, by ${P.f3(runs[runs.length - 1].disagreement_A)} Å.` : '.'),
+      p.counts.regenerate ? `${p.counts.regenerate} ${s_(p.counts.regenerate, 'reaction gets', 'reactions get')} no run even though ${s_(p.counts.regenerate, 'it looks', 'they look')} worst: ${s_(p.counts.regenerate, 'it still breaks', 'they still break')} a rule, and in our tests none of 6 such guesses optimised to the right TS. Re-generate ${s_(p.counts.regenerate, 'it', 'them')}.` : ''] : ['No targeted run is planned with this budget.']],
+    ['What if I had 5 more runs?', [added.length ? `With ${S.budget + 5} runs the plan adds ${added.length}: ${added.join(', ')}. ${more.counts.hold} ${s_(more.counts.hold, 'reaction', 'reactions')} would be left on hold instead of ${p.counts.hold}.` : `Nothing more would be run: no other reaction needs a check.`,
+      p.amber > 0 ? `${p.amber} runs would cover every reaction marked "check with DFT" in this batch.` : '']],
+    ['What can this plan not tell me?', [
+      `Whether a trusted reaction is wrong in a way all the models share. On the benchmark ${(100 * D0.any_error_among_trusted).toFixed(1)}% of trusted guesses were wrong, and no budget for targeted runs changes that. Only a random audit can bound it, and a small audit gives a wide bound.`,
+      `How many runs will finish. A run started from a wrong guess rarely reaches the right TS (${x.check_with_dft_guess_was_wrong.reached_the_reference_ts} of ${x.check_with_dft_guess_was_wrong.runs} in our GFN2-xTB tests, against ${x.check_with_dft_guess_was_right.reached_the_reference_ts} of ${x.check_with_dft_guess_was_right.runs} from right guesses).`,
+      `How it does on your chemistry. It was tested on one family of models (GoFlow) and small gas-phase H/C/N/O molecules. Try it on reactions whose TS you already know.`]],
+    ['How good is the rule?', [
+      `In ${b40.draws.toLocaleString('en-GB')} random batches of 40 benchmark reactions with 5 runs, ${b40.mean_wrong_among_picked} of the 5 picks had a wrong geometry on average. Picking at random finds ${b40.mean_if_picked_at_random}; a perfect order would find ${b40.mean_with_perfect_order}.`,
+      `In ${(100 * b40.share_of_batches_where_no_pick_was_wrong).toFixed(0)}% of those batches no pick was wrong. So it is much better than chance and well short of perfect.`]],
+    ['What do I do after the runs?', [
+      `For each run, check for exactly one imaginary frequency, then follow the reaction path (IRC). The plan's ORCA inputs do both in one job.`,
+      `Run tsso irc-check on the two ends of the path. It says whether they have the bonds of your reactant and product and, given the SMILES, the right handedness. In our xTB tests ${notref} of ${one} optimisations with one imaginary frequency were not the reference TS, so the frequency alone is not enough.`,
+      `Mark each run right or wrong above, or use tsso plan --results. Re-generate the wrong ones.`]]
+  ];
+}
+function chips() {
+  const ok = S.plan && !S.plan.error && S.rows.length;
+  $('chips').innerHTML = ok ? answers().map((a, i) => `<button class="pill" data-q="${i}">${a[0]}</button>`).join('') : '';
+}
+function say(who, html, cls) { const d = document.createElement('div'); d.className = 'msg ' + (cls || ''); d.innerHTML = `<div class="who">${who}</div>${html}`; $('talk').appendChild(d); d.scrollIntoView({block: 'nearest', behavior: 'smooth'}); return d; }
+
+// ---- Claude, with tools (the same loop as tsso/agent.py)
+const TOOLS = [
+  {name: 'plan_dft_budget', description: 'Plan where the DFT runs go for the reactions in front of the person. A fixed rule: re-generate what breaks a rule, run DFT on the most disputed (goal find_errors) or the least disputed "check with DFT" reactions (goal finish_ts), hold the other "check with DFT" reactions, trust the rest. audit: runs for random audits of trusted reactions.',
+   input_schema: {type: 'object', properties: {budget: {type: 'integer', minimum: 0}, goal: {type: 'string', enum: ['find_errors', 'finish_ts']}, audit: {type: 'integer', minimum: 0}}, required: ['budget']}},
+  {name: 'plan_evidence', description: 'How the planning rule did against reference TSs on the RDB7 benchmark (GoFlow guesses), with the limits of that test. Benchmark results, not predictions.', input_schema: {type: 'object', properties: {}}}];
+function callTool(name, a) {
+  if (name === 'plan_dft_budget') {
+    const p = P.plan(S.rows, a.budget, {goal: a.goal || 'find_errors', audit: a.audit || 0, seed: S.draw});
+    if (!p.error) { p.in_plain_words = P.explain(p); p.plan = p.plan.filter(it => it.action !== 'trust'); }
+    return p;
+  }
+  if (name === 'plan_evidence') return EV;
+  return {error: 'there is no tool called ' + name};
+}
+let history = [];
+async function askClaude(q) {
+  const key = $('key').value.trim();
+  if (!key) { say('This page', '<p class="err">Paste your Anthropic API key first (console.anthropic.com → API keys).</p>'); return; }
+  say('You', `<p>${esc(q)}</p>`, 'q');
+  const box = say('Claude', '<p class="muted">Thinking…</p>');
+  const messages = history.concat([{role: 'user', content: q}]), outputs = [], calls = [];
+  try {
+    let answer = null, model = MODEL;
+    for (let step = 0; step < 8 && answer === null; step++) {
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {method: 'POST',
+        headers: {'x-api-key': key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json', 'anthropic-dangerous-direct-browser-access': 'true'},
+        body: JSON.stringify({model: MODEL, max_tokens: 1500, system: SYSTEM, tools: TOOLS, messages})});
+      const reply = await resp.json();
+      if (!reply.content) throw new Error((reply.error && reply.error.message) || 'the Anthropic API returned no answer');
+      model = reply.model || model;
+      messages.push({role: 'assistant', content: reply.content});
+      const uses = reply.content.filter(b => b.type === 'tool_use');
+      if (reply.stop_reason !== 'tool_use' || !uses.length) { answer = reply.content.filter(b => b.type === 'text').map(b => b.text).join('').trim(); break; }
+      messages.push({role: 'user', content: uses.map(b => { let out; try { out = callTool(b.name, b.input || {}); } catch (e) { out = {error: String(e.message || e)}; }
+        outputs.push(out); calls.push(`${b.name}(${Object.entries(b.input || {}).map(([k, v]) => k + '=' + v).join(', ')})`);
+        return {type: 'tool_result', tool_use_id: b.id, content: JSON.stringify({call: outputs.length, result: out}), is_error: !!out.error}; })});
+    }
+    if (answer === null) answer = 'Stopped: too many tool calls without an answer.';
+    const r = P.render(answer, outputs), typed = P.typedNumbers(answer, q + ' ' + history.filter(m => m.role === 'user').map(m => m.content).join(' '));
+    let trace = calls.length ? 'Tools used: ' + calls.join(', ') + '. ' : 'No tool was used for this answer. ';
+    if (r.filled.length) trace += `${r.filled.length} ${s_(r.filled.length, 'value was', 'values were')} copied from tool results by this page, not typed by Claude. `;
+    if (r.unresolved.length) trace += `Claude pointed at values that do not exist: ${r.unresolved.join(', ')}. `;
+    if (typed.length) trace += `Typed by Claude itself, so check before relying on them: ${typed.join(', ')}.`;
+    box.innerHTML = `<div class="who">Claude · ${esc(model)}</div>` + r.text.split(/\n{2,}/).map(t => `<p>${esc(t)}</p>`).join('') + `<div class="trace">${esc(trace)}</div>`;
+    history = history.concat([{role: 'user', content: q}, {role: 'assistant', content: r.text}]);
+  } catch (e) {
+    box.innerHTML = `<div class="who">Claude</div><p class="err">Could not ask Claude: ${esc(e.message || e)}. If this page is a preview inside another app, open it on the project site, where it can reach api.anthropic.com.</p>`;
+  }
+}
+
+// ---- evidence (static)
+function evidence() {
+  $('ev1').innerHTML = '<tr><th>Batch size</th><th class="num">Wrong guesses among the 5 picks</th><th class="num">At random</th><th class="num">Perfect</th></tr>' +
+    EV.B_batches.map(b => `<tr><td>${b.batch_size}</td><td class="num"><b>${b.mean_wrong_among_picked}</b></td><td class="num">${b.mean_if_picked_at_random}</td><td class="num">${b.mean_with_perfect_order}</td></tr>`).join('');
+  const H = EV.H_fewer_guesses.rows, A = EV.A_eight_seed_models_geometry.by_budget.find(r => r.budget === 10);
+  $('ev-goals').textContent = `It needs several guesses per reaction. Over all 1,194 reactions, ${A.wrong_among_picked} of the first 10 picks were wrong when each reaction had 8 guesses, ${H.find(h => h.guesses_per_reaction === 4).wrong_among_first_picks['10'].mean} with 4 guesses and ${H.find(h => h.guesses_per_reaction === 2).wrong_among_first_picks['10'].mean} with 2. Picking at random finds ${A.expected_if_picked_at_random}.`;
+  const G = EV.G_random_audits, D0 = EV.D_what_is_left.rows[0], J = EV.J_reaction_path_check_on_stand_ins;
+  $('limits').innerHTML = [
+    `<b>It cannot see an error all the models share.</b> ${(100 * D0.geometry_error_among_trusted).toFixed(1)}% of trusted benchmark guesses had a wrong geometry whatever the budget. A random audit bounds this, but about ${G.audits_needed_for_a_10pct_bound_if_all_come_back_right['100']} clean audits are needed to bound 100 trusted reactions at 10%.`,
+    `<b>Finding errors and finishing TSs pull apart.</b> You choose one goal; the plan does not give you both.`,
+    `<b>One model family, one dataset.</b> GoFlow guesses for small gas-phase H/C/N/O molecules. No new DFT was run for these tests.`,
+    `<b>The reaction-path check is untested on real IRC output.</b> On stand-in endpoints it caught ${J.mirror_image_ends_called_wrong_with_smiles} of ${J.reactions_with_stereocentres_compared} mirror images when given the SMILES and none without it.`,
+    `<b>The chat with Claude has not been scored.</b> Its numbers are copied from tool results, but a copied number can still sit in a wrong sentence.`].map(t => `<li>${t}</li>`).join('');
+}
+
+// ---- wiring
+const on = (id, ev, f) => $(id).addEventListener(ev, f);
+on('budget', 'input', e => { S.budget = +e.target.value; compute(); });
+on('n', 'input', e => { S.n = +e.target.value; compute(); });
+on('audit', 'input', e => { S.audit = +e.target.value; compute(); });
+on('redraw', 'click', () => { S.draw += 1; compute(); });
+on('src-bench', 'click', () => { S.source = 'bench'; compute(); });
+on('src-own', 'click', () => { S.source = 'own'; S.reveal = false; $('reveal').checked = false; compute(); });
+on('goal-find', 'click', () => { S.goal = 'find_errors'; compute(); });
+on('goal-finish', 'click', () => { S.goal = 'finish_ts'; compute(); });
+on('reveal', 'change', e => { S.reveal = e.target.checked; draw(); });
+on('file', 'change', e => { const f = e.target.files[0]; if (!f) return; const rd = new FileReader();
+  rd.onload = () => { try { const rows = P.parseCsv(String(rd.result)); if (!rows.length || !rows.some(r => r.verdict)) throw new Error('no verdict column found: is this the verdicts.csv written by tsso batch?');
+      S.own = rows; $('file-err').textContent = ''; } catch (err) { S.own = null; $('file-err').textContent = 'Could not read this file: ' + err.message; } compute(); };
+  rd.readAsText(f); });
+on('strip', 'click', e => { const b = e.target.closest('button[data-id]'); if (!b) return; S.sel = S.sel === b.dataset.id ? null : b.dataset.id;
+  document.querySelectorAll('#strip .m').forEach(m => m.classList.toggle('sel', m.dataset.id === S.sel)); detail(); });
+on('runs', 'click', e => { const b = e.target.closest('button[data-o]'); if (!b) return; const id = b.dataset.id;
+  if (S.outcomes[id] === b.dataset.o) delete S.outcomes[id]; else S.outcomes[id] = b.dataset.o; runsBox(); });
+on('fill', 'click', () => { S.plan.run_dft.forEach(i => { S.outcomes[i] = wrongOf(i) ? 'wrong' : 'right'; }); runsBox(); });
+on('clear', 'click', () => { S.outcomes = {}; runsBox(); });
+on('chips', 'click', e => { const b = e.target.closest('button[data-q]'); if (!b) return; const a = answers()[+b.dataset.q];
+  say('You', `<p>${esc(a[0])}</p>`, 'q'); say('Answered by this page from the plan (no AI)', a[1].filter(Boolean).map(t => `<p>${esc(t)}</p>`).join('')); });
+on('ask-form', 'submit', e => { e.preventDefault(); const q = $('ask').value.trim(); if (!q || !S.plan || S.plan.error) return; $('ask').value = ''; askClaude(q); });
+on('copy', 'click', async () => {
+  const q = v => /[",\n]/.test(String(v)) ? '"' + String(v).replace(/"/g, '""') + '"' : String(v);
+  const csv = 'id,action,dft_order,audit,verdict,disagreement_A,why\n' + S.plan.plan.map(it => [it.id, it.action, it.dft_order || '', it.audit ? 'True' : '', it.verdict || '', it.disagreement_A === null ? '' : it.disagreement_A, it.why].map(q).join(',')).join('\n') + '\n';
+  try { await navigator.clipboard.writeText(csv); $('copied').textContent = 'Copied. Paste it into a file or a spreadsheet.'; } catch (err) { $('copied').textContent = 'Copying is blocked here; select the table and copy it by hand.'; }
+});
+evidence(); compute();
+})();
+</script>
+</body>
+</html>

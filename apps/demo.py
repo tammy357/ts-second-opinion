@@ -590,7 +590,8 @@ def _(ROOT, json, mo):
     mo.vstack([mo.md('## 3b · Where should the DFT go?'),
                mo.md('You have many reactions and only a few DFT runs. Set the budget and get a plan: which reactions to '
                      'run, which to trust, which to hold back and which to re-generate. The plan is a fixed rule, not an '
-                     'AI judgement: the same reactions and budget always give the same plan.'),
+                     'AI judgement: the same reactions and budget always give the same plan. A lighter page with the '
+                     'same planner, quicker on a phone: [the DFT budget planner](https://tammy357.github.io/ts-second-opinion/planner/).'),
                plan_source])
     return (plan_audit, plan_budget, plan_demo, plan_draw, plan_ev, plan_file, plan_goal, plan_n, plan_reveal,
             plan_source)

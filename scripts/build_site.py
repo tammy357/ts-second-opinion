@@ -193,6 +193,7 @@ one, which describes a different reaction. TS Second Opinion catches those mirro
 the ones it can, and says which guesses to trust before anyone spends DFT on them.</div>
 <div class="links">
   <a class="btn primary" href="app/">Open the live app</a>
+  <a class="btn" href="planner/">Plan a DFT budget</a>
   <a class="btn" href="https://youtu.be/zaH6y7H471k">Watch the 4-minute video</a>
   <a class="btn" href="https://github.com/tammy357/ts-second-opinion">Code on GitHub</a>
   <a class="btn" href="https://doi.org/10.26434/chemrxiv.15011459/v1">Read the preprint</a>

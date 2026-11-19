@@ -203,7 +203,9 @@ try `tsso batch examples/batch`.
 
 ### Plan a DFT budget
 
-You have many reactions and only a few DFT runs. Say how many, and get a plan:
+You have many reactions and only a few DFT runs. Say how many, and get a plan. Try it in the browser, with nothing
+to install: **[the DFT budget planner](https://tammy357.github.io/ts-second-opinion/planner/)** (it opens at once on a
+phone, and takes your own `verdicts.csv`). On the command line:
 
 ```bash
 tsso plan tsso_batch --budget 5                 # your own reactions: the folder `tsso batch` wrote
